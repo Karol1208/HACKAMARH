@@ -195,11 +195,11 @@
                 <div class="relative z-10 flex flex-col sm:flex-row gap-4 w-full lg:w-auto shrink-0">
                     <div class="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl flex-1 lg:w-44 text-center shadow-lg">
                         <p class="text-[10px] text-brand-jalapao uppercase font-bold tracking-widest mb-1.5">Fazendas Aprovadas</p>
-                        <h4 class="font-display text-4xl font-extrabold">452</h4>
+                        <h4 id="kpi-selos" class="font-display text-4xl font-extrabold">—</h4>
                     </div>
                     <div class="bg-white/10 backdrop-blur-md border border-white/20 p-5 rounded-2xl flex-1 lg:w-44 text-center shadow-lg">
                         <p class="text-[10px] text-green-300 uppercase font-bold tracking-widest mb-1.5">Taxa de Sucesso (IA)</p>
-                        <h4 class="font-display text-4xl font-extrabold">92%</h4>
+                        <h4 id="kpi-sobrevivencia" class="font-display text-4xl font-extrabold">—</h4>
                     </div>
                 </div>
             </div>
@@ -229,199 +229,17 @@
                 <!-- Pesquisa de Produtor -->
                 <div class="relative w-full md:w-80">
                     <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
-                    <input type="text" placeholder="Buscar Nº CAR, Fazenda ou CPF/CNPJ..." class="w-full text-sm input-custom rounded-xl pl-10 pr-4 py-2.5 text-gray-700 placeholder-gray-400 shadow-sm">
+                    <input id="busca-produtor" oninput="iniciarBusca(this)" type="text" placeholder="Buscar Nº CAR, Fazenda ou CPF/CNPJ..." class="w-full text-sm input-custom rounded-xl pl-10 pr-4 py-2.5 text-gray-700 placeholder-gray-400 shadow-sm" autocomplete="off">
                 </div>
             </div>
 
             <!-- GRID DE PRODUTORES RURAIS (CARDS) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-0">
-                
-                <!-- CARD 1: 100% Conforme (Selo Verde) -->
-                <!-- Ajuste: Maior padding interno (p-8) para respiro -->
-                <div class="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
-                    <!-- Faixa Verde Lateral -->
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-cerrado"></div>
-                    
-                    <div class="mb-6">
-                        <div class="flex justify-between items-start mb-3 pl-2">
-                            <span class="bg-green-50 text-brand-cerrado text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider flex items-center gap-1">
-                                <i data-lucide="check-circle-2" class="w-3 h-3"></i> Elegível Selo Verde
-                            </span>
-                            <span class="text-xs text-gray-400 font-mono">Ano 3/5</span>
-                        </div>
-                        <h4 class="font-display font-extrabold text-gray-900 text-xl pl-2 leading-tight">Agropecuária Vale S/A</h4>
-                        <p class="text-xs text-gray-500 font-mono mb-4 pl-2 mt-1">CAR: TO-49211288...</p>
-                    </div>
-
-                    <!-- Dados da IA -->
-                    <div class="flex items-center gap-5 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 mb-8">
-                        <div class="w-16 h-16 shrink-0 relative flex items-center justify-center">
-                            <!-- Gráfico Circular SVG -->
-                            <svg viewBox="0 0 36 36" class="circular-chart text-brand-cerrado w-16 h-16">
-                              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                              <path class="circle" stroke-dasharray="98, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor"/>
-                            </svg>
-                            <span class="absolute font-display font-extrabold text-[11px] text-gray-700">98%</span>
-                        </div>
-                        <div class="flex-1 space-y-2">
-                            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wide">Sobrevivência Florestal</p>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">Scan Realizado:</span>
-                                <span class="font-bold text-gray-900">1.200 Mudas</span>
-                            </div>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">Crescimento IA:</span>
-                                <span class="font-bold text-brand-cerrado">+0.8m / ano</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="w-full bg-brand-jalapao hover:bg-yellow-600 text-white text-sm font-bold py-3.5 rounded-xl transition shadow-lg shadow-brand-jalapao/20 flex items-center justify-center gap-2 mt-auto">
-                        <i data-lucide="award" class="w-4 h-4"></i> Emitir Certificado CarbonTO
-                    </button>
-                </div>
-
-                <!-- CARD 2: Pendente / Atrasado (Alerta) -->
-                <div class="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between opacity-90">
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-fire"></div>
-                    
-                    <div class="mb-6">
-                        <div class="flex justify-between items-start mb-3 pl-2">
-                            <span class="bg-red-50 text-brand-fire text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider flex items-center gap-1">
-                                <i data-lucide="alert-triangle" class="w-3 h-3"></i> Leitura Atrasada
-                            </span>
-                            <span class="text-xs text-gray-400 font-mono">Ano 2/5</span>
-                        </div>
-                        <h4 class="font-display font-extrabold text-gray-900 text-xl pl-2 leading-tight">Fazenda Três Rios</h4>
-                        <p class="text-xs text-gray-500 font-mono mb-4 pl-2 mt-1">CAR: TO-11294422...</p>
-                    </div>
-
-                    <!-- Dados da IA (Sem dados / Atrasado) -->
-                    <div class="bg-red-50/50 p-4 rounded-2xl border border-red-100 mb-8 flex items-start gap-4">
-                        <i data-lucide="smartphone-off" class="text-brand-fire w-8 h-8 shrink-0 mt-1"></i>
-                        <div>
-                            <p class="text-xs font-bold text-gray-900 mb-1.5">App: Sem dados no período</p>
-                            <p class="text-[11px] text-gray-600 leading-relaxed">
-                                Produtor não realizou o escaneamento anual das 400 mudas exigidas pelo PRAD. Risco de multa automática.
-                            </p>
-                        </div>
-                    </div>
-
-                    <div class="flex gap-3 mt-auto">
-                        <button class="w-full bg-white border border-gray-200 hover:bg-gray-50 text-gray-700 text-sm font-bold py-3.5 rounded-xl transition shadow-sm flex items-center justify-center gap-2">
-                            <i data-lucide="mail" class="w-4 h-4"></i> Notificar
-                        </button>
-                        <button class="w-full bg-brand-fire/10 border border-brand-fire/20 hover:bg-brand-fire/20 text-brand-fire text-sm font-bold py-3.5 rounded-xl transition flex items-center justify-center gap-2">
-                            <i data-lucide="gavel" class="w-4 h-4"></i> Autuar
-                        </button>
-                    </div>
-                </div>
-
-                <!-- CARD 3: Em Análise / Leitura Inicial -->
-                <div class="bg-white rounded-3xl p-8 border border-gray-200 shadow-sm hover:shadow-md transition-shadow relative overflow-hidden flex flex-col justify-between">
-                    <div class="absolute left-0 top-0 bottom-0 w-1.5 bg-brand-river"></div>
-                    
-                    <div class="mb-6">
-                        <div class="flex justify-between items-start mb-3 pl-2">
-                            <span class="bg-blue-50 text-brand-river text-[10px] font-bold px-2.5 py-1 rounded uppercase tracking-wider flex items-center gap-1">
-                                <i data-lucide="clock" class="w-3 h-3"></i> Leitura Recebida
-                            </span>
-                            <span class="text-xs text-gray-400 font-mono">Ano 1/5</span>
-                        </div>
-                        <h4 class="font-display font-extrabold text-gray-900 text-xl pl-2 leading-tight">Associação Nova Era</h4>
-                        <p class="text-xs text-gray-500 font-mono mb-4 pl-2 mt-1">CNPJ: 14.552.122/0001-89</p>
-                    </div>
-
-                    <!-- Dados da IA -->
-                    <div class="flex items-center gap-5 bg-gray-50/50 p-4 rounded-2xl border border-gray-100 mb-8">
-                        <div class="w-16 h-16 shrink-0 relative flex items-center justify-center">
-                            <svg viewBox="0 0 36 36" class="circular-chart text-brand-river w-16 h-16">
-                              <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
-                              <path class="circle" stroke-dasharray="100, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor"/>
-                            </svg>
-                            <span class="absolute font-display font-extrabold text-[11px] text-gray-700">100%</span>
-                        </div>
-                        <div class="flex-1 space-y-2">
-                            <p class="text-[10px] text-gray-500 font-bold uppercase tracking-wide">Primeiro Escaneamento</p>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">Scan App:</span>
-                                <span class="font-bold text-gray-900">200 Mudas</span>
-                            </div>
-                            <div class="flex justify-between text-xs">
-                                <span class="text-gray-600">Confirmação:</span>
-                                <span class="font-bold text-brand-river">Aguardando IA</span>
-                            </div>
-                        </div>
-                    </div>
-
-                    <button class="w-full bg-brand-river hover:bg-blue-700 text-white text-sm font-bold py-3.5 rounded-xl transition shadow-md shadow-brand-river/20 flex items-center justify-center gap-2 mt-auto">
-                        <i data-lucide="eye" class="w-4 h-4"></i> Auditar Fotos
-                    </button>
-                </div>
-
+            <div id="grid-produtores" class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 relative z-0">
+                <div class="col-span-3 text-center py-16 text-gray-400">Carregando produtores...</div>
             </div>
         </div>
     </main>
 
-    <!-- Scripts Funcionais -->
-    <script>
-        // Inicializa Ícones
-        lucide.createIcons();
-
-        // 1. Menu Mobile Off-Canvas
-        function toggleSidebar() {
-            const sidebar = document.getElementById('sidebar');
-            const overlay = document.getElementById('mobile-overlay');
-            sidebar.classList.toggle('-translate-x-full');
-            overlay.classList.toggle('active');
-        }
-
-        // 2. Sistema de Dropdowns Customizados
-        let activeDropdown = null;
-
-        function toggleDropdown(id) {
-            const menu = document.getElementById(`${id}-menu`);
-            const icon = document.getElementById(`${id}-icon`);
-            
-            if (activeDropdown && activeDropdown !== id) {
-                document.getElementById(`${activeDropdown}-menu`).classList.add('opacity-0');
-                setTimeout(() => document.getElementById(`${activeDropdown}-menu`).classList.add('hidden'), 200);
-                document.getElementById(`${activeDropdown}-icon`).classList.remove('rotate-180');
-            }
-
-            if (menu.classList.contains('hidden')) {
-                menu.classList.remove('hidden');
-                setTimeout(() => menu.classList.remove('opacity-0'), 10);
-                icon.classList.add('rotate-180');
-                activeDropdown = id;
-            } else {
-                menu.classList.add('opacity-0');
-                setTimeout(() => menu.classList.add('hidden'), 200);
-                icon.classList.remove('rotate-180');
-                activeDropdown = null;
-            }
-        }
-
-        function selectOption(dropdownId, text, iconName, colorClass = 'text-brand-jalapao') {
-            const selectedSpan = document.getElementById(`${dropdownId}-selected`);
-            
-            // Remonta o HTML interno do span com a opção selecionada
-            selectedSpan.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 ${colorClass}"></i> ${text}`;
-            
-            // Recria os ícones inseridos dinamicamente
-            lucide.createIcons();
-            toggleDropdown(dropdownId);
-        }
-
-        // Fecha Dropdown ao clicar fora
-        document.addEventListener('click', (e) => {
-            if (activeDropdown) {
-                const wrapper = document.getElementById(`${activeDropdown}-wrapper`);
-                if (!wrapper.contains(e.target)) {
-                    toggleDropdown(activeDropdown);
-                }
-            }
-        });
-    </script>
+    <script src="produtores.js"></script>
 </body>
 </html>

@@ -81,19 +81,19 @@
             <div class="grid grid-cols-2 lg:grid-cols-4 gap-4">
                 <div class="bg-gradient-to-br from-brand-cerrado to-green-700 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><i data-lucide="trees" class="w-5 h-5"></i></div>
-                    <div><p class="text-[10px] font-bold text-white/70 uppercase tracking-wider">Área Restaurada</p><h3 class="font-display font-extrabold text-xl">4.280 ha</h3></div>
+                    <div><p class="text-[10px] font-bold text-white/70 uppercase tracking-wider">Área Restaurada</p><h3 id="kpi-area" class="font-display font-extrabold text-xl">—</h3></div>
                 </div>
                 <div class="bg-gradient-to-br from-brand-river to-blue-700 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><i data-lucide="cloud" class="w-5 h-5"></i></div>
-                    <div><p class="text-[10px] font-bold text-white/70 uppercase tracking-wider">CO₂ Sequestrado</p><h3 class="font-display font-extrabold text-xl">12.4k t</h3></div>
+                    <div><p class="text-[10px] font-bold text-white/70 uppercase tracking-wider">CO₂ Sequestrado</p><h3 id="kpi-co2" class="font-display font-extrabold text-xl">—</h3></div>
                 </div>
                 <div class="bg-gradient-to-br from-brand-jalapao to-orange-500 rounded-2xl p-4 text-white shadow-md flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-white/20 flex items-center justify-center shrink-0"><i data-lucide="award" class="w-5 h-5"></i></div>
-                    <div><p class="text-[10px] font-bold text-white/70 uppercase tracking-wider">Selos Verdes</p><h3 class="font-display font-extrabold text-xl">452</h3></div>
+                    <div><p class="text-[10px] font-bold text-white/70 uppercase tracking-wider">Selos Verdes</p><h3 id="kpi-selos" class="font-display font-extrabold text-xl">—</h3></div>
                 </div>
                 <div class="bg-white rounded-2xl p-4 border border-gray-100 shadow-sm flex items-center gap-3">
                     <div class="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-green-600 shrink-0"><i data-lucide="trending-up" class="w-5 h-5"></i></div>
-                    <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Créditos Carbono</p><h3 class="font-display font-extrabold text-xl text-gray-900">R$ 2.1M</h3></div>
+                    <div><p class="text-[10px] font-bold text-gray-400 uppercase tracking-wider">Créditos Carbono</p><h3 id="kpi-creditos" class="font-display font-extrabold text-xl text-gray-900">—</h3></div>
                 </div>
             </div>
 
@@ -102,39 +102,13 @@
                 <div class="px-6 py-4 border-b border-gray-100 bg-gray-50/50">
                     <h3 class="font-display font-bold text-gray-800">Relatórios Gerados</h3>
                 </div>
-                <div class="divide-y divide-gray-100">
-                    <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-brand-cerrado/10 flex items-center justify-center text-brand-cerrado"><i data-lucide="file-text" class="w-5 h-5"></i></div>
-                            <div><p class="font-bold text-gray-900 text-sm">PRAD Consolidado — Maio 2026</p><p class="text-xs text-gray-500 mt-0.5">1.247 propriedades · Gerado em 30/05/2026</p></div>
-                        </div>
-                        <button class="text-brand-river text-xs font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition flex items-center gap-1.5"><i data-lucide="download" class="w-3 h-3"></i> Baixar</button>
-                    </div>
-                    <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-brand-jalapao/10 flex items-center justify-center text-brand-jalapao"><i data-lucide="leaf" class="w-5 h-5"></i></div>
-                            <div><p class="font-bold text-gray-900 text-sm">Selos Verdes B2B — Q1 2026</p><p class="text-xs text-gray-500 mt-0.5">452 produtores elegíveis · Gerado em 01/04/2026</p></div>
-                        </div>
-                        <button class="text-brand-river text-xs font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition flex items-center gap-1.5"><i data-lucide="download" class="w-3 h-3"></i> Baixar</button>
-                    </div>
-                    <div class="px-6 py-4 flex items-center justify-between hover:bg-gray-50 transition">
-                        <div class="flex items-center gap-4">
-                            <div class="w-10 h-10 rounded-xl bg-brand-river/10 flex items-center justify-center text-brand-river"><i data-lucide="bar-chart-2" class="w-5 h-5"></i></div>
-                            <div><p class="font-bold text-gray-900 text-sm">Créditos de Carbono — Anual 2025</p><p class="text-xs text-gray-500 mt-0.5">12.400 tCO₂ · Gerado em 31/12/2025</p></div>
-                        </div>
-                        <button class="text-brand-river text-xs font-bold bg-blue-50 hover:bg-blue-100 px-3 py-1.5 rounded-lg border border-blue-200 transition flex items-center gap-1.5"><i data-lucide="download" class="w-3 h-3"></i> Baixar</button>
-                    </div>
+                <div id="lista-relatorios" class="divide-y divide-gray-100">
+                    <div class="px-6 py-8 text-center text-gray-400 text-sm">Carregando...</div>
                 </div>
             </div>
         </div>
     </main>
 
-    <script>
-        lucide.createIcons();
-        function toggleSidebar() {
-            document.getElementById('sidebar').classList.toggle('-translate-x-full');
-            document.getElementById('mobile-overlay').classList.toggle('active');
-        }
-    </script>
+    <script src="relatorios.js"></script>
 </body>
 </html>

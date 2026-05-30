@@ -191,12 +191,12 @@
             <div class="flex items-center gap-4">
                 <div class="relative hidden md:block">
                     <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
-                    <input type="text" placeholder="Buscar Nº CAR ou Município..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-river focus:ring-1 focus:ring-brand-river w-64 shadow-sm">
+                    <input id="search-input" type="text" placeholder="Buscar Nº CAR ou Município..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-river focus:ring-1 focus:ring-brand-river w-64 shadow-sm" autocomplete="off">
+                    <div id="search-results" class="hidden absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"></div>
                 </div>
                 <button class="relative p-2 text-gray-600 hover:text-brand-cerrado hover:bg-white rounded-lg transition">
                     <i data-lucide="bell" class="w-5 h-5"></i>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-brand-fire rounded-full animate-ping"></span>
-                    <span class="absolute top-1 right-1 w-2 h-2 bg-brand-fire rounded-full"></span>
+                    <span id="notif-badge" class="hidden absolute -top-1 -right-1 bg-brand-fire text-white text-[9px] font-bold min-w-[16px] h-4 px-1 rounded-full flex items-center justify-center"></span>
                 </button>
             </div>
         </header>
@@ -209,8 +209,8 @@
                 <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
                     <div>
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Mudas Atestadas (IA)</p>
-                        <h3 class="font-display font-extrabold text-2xl text-gray-900">1.2M</h3>
-                        <p class="text-xs text-brand-cerrado font-medium mt-1 flex items-center gap-1"><i data-lucide="arrow-up-right" class="w-3 h-3"></i> 92% Sobrevivência</p>
+                        <h3 id="kpi-mudas" class="font-display font-extrabold text-2xl text-gray-900">—</h3>
+                        <p class="text-xs text-brand-cerrado font-medium mt-1 flex items-center gap-1"><i data-lucide="arrow-up-right" class="w-3 h-3"></i> <span id="kpi-sobrevivencia">—</span>% Sobrevivência</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-brand-cerrado/10 flex items-center justify-center text-brand-cerrado">
                         <i data-lucide="trees" class="w-6 h-6"></i>
@@ -220,7 +220,7 @@
                 <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
                     <div>
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Drones em Voo</p>
-                        <h3 class="font-display font-extrabold text-2xl text-gray-900">14<span class="text-sm font-normal text-gray-500"> bases ativas</span></h3>
+                        <h3 class="font-display font-extrabold text-2xl text-gray-900"><span id="kpi-drones">—</span><span class="text-sm font-normal text-gray-500"> bases ativas</span></h3>
                         <p class="text-xs text-brand-river font-medium mt-1">Varredura automática</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-brand-river/10 flex items-center justify-center text-brand-river">
@@ -231,7 +231,7 @@
                 <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
                     <div>
                         <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Infrações (S/ Licença)</p>
-                        <h3 class="font-display font-extrabold text-2xl text-gray-900">03<span class="text-sm font-normal text-gray-500"> focos</span></h3>
+                        <h3 class="font-display font-extrabold text-2xl text-gray-900"><span id="kpi-infracoes">—</span><span class="text-sm font-normal text-gray-500"> focos</span></h3>
                         <p class="text-xs text-brand-fire font-medium mt-1">Cruzamento CAR concluído</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-brand-fire/10 flex items-center justify-center text-brand-fire">
@@ -242,7 +242,7 @@
                 <div class="bg-gradient-to-br from-brand-jalapao to-orange-500 rounded-2xl p-5 border border-brand-jalapao/20 shadow-md text-white flex items-center justify-between">
                     <div>
                         <p class="text-xs font-bold text-white/80 uppercase tracking-wider mb-1">Selos Verdes (B2B)</p>
-                        <h3 class="font-display font-extrabold text-2xl">452</h3>
+                        <h3 id="kpi-selos" class="font-display font-extrabold text-2xl">—</h3>
                         <p class="text-xs text-white font-medium mt-1">Elegíveis a Créditos</p>
                     </div>
                     <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
@@ -281,58 +281,8 @@
                         <p class="text-xs text-gray-500">Cruzamento Automático CAR x Licenças</p>
                     </div>
                     
-                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
-                        
-                        <!-- Card Alerta 1 (App Cidadão) -->
-                        <div class="bg-white border border-brand-fire/30 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden">
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-fire"></div>
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="bg-red-50 text-brand-fire text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                                    <i data-lucide="smartphone" class="w-3 h-3"></i> App Cidadão
-                                </span>
-                                <span class="text-xs font-mono text-gray-400">Há 2 min</span>
-                            </div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-1">Foco de Calor Confirmado</h4>
-                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">Denúncia georreferenciada no município de Lagoa da Confusão. Protege (Bombeiros) acionado.</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">CAR: Grande Porte</span>
-                                <button class="text-brand-river text-xs font-bold hover:underline">Ver Detalhes</button>
-                            </div>
-                        </div>
-
-                        <!-- Card Alerta 2 (Satélite) -->
-                        <div class="bg-white border border-brand-river/30 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden">
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-river"></div>
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="bg-blue-50 text-brand-river text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                                    <i data-lucide="satellite" class="w-3 h-3"></i> Planet Labs
-                                </span>
-                                <span class="text-xs font-mono text-gray-400">Há 15 min</span>
-                            </div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-1">Supressão Vegetal (Sweep)</h4>
-                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">Alteração de biomassa detectada. Status da Licença: VENCIDA. Auto de infração em rascunho.</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">CAR: Médio Porte</span>
-                                <button class="text-brand-river text-xs font-bold hover:underline">Auditar</button>
-                            </div>
-                        </div>
-
-                        <!-- Card Positivo (Scanner Mudas) -->
-                        <div class="bg-white border border-brand-cerrado/30 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden">
-                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-cerrado"></div>
-                            <div class="flex justify-between items-start mb-2">
-                                <span class="bg-green-50 text-brand-cerrado text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
-                                    <i data-lucide="scan" class="w-3 h-3"></i> App Produtor
-                                </span>
-                                <span class="text-xs font-mono text-gray-400">Há 1h</span>
-                            </div>
-                            <h4 class="font-bold text-gray-800 text-sm mb-1">Atestado PRAD Aprovado</h4>
-                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">Lote Viveiro Palmas atingiu 1.5m. Curva de crescimento atestada por IA.</p>
-                            <div class="flex justify-between items-center">
-                                <span class="text-[10px] font-bold text-brand-jalapao bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-200">Emissão Selo Verde</span>
-                            </div>
-                        </div>
-
+                    <div id="alert-feed" class="flex-1 overflow-y-auto p-4 space-y-4">
+                        <div class="text-center py-8 text-gray-400 text-xs">Carregando alertas...</div>
                     </div>
                 </div>
             </div>
@@ -340,70 +290,163 @@
         </div>
     </main>
 
-    <!-- Scripts de Funcionalidade Global -->
-    <!-- Leaflet JS -->
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script>
-        // 1. Inicializar Ícones
-        lucide.createIcons();
+        const API = 'http://127.0.0.1:8000';
 
-        // 2. Inicializar Mapa Leaflet (Focado no Tocantins)
-        document.addEventListener('DOMContentLoaded', () => {
-            // Coordenadas centrais aproximadas do Tocantins
-            const map = L.map('map', {
-                zoomControl: false // Movemos o controle para customizar se necessário
-            }).setView([-10.1833, -48.3333], 6);
+        // --- Helpers ---
+        function fmt(n) {
+            if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
+            if (n >= 1_000) return (n / 1_000).toFixed(1) + 'k';
+            return String(n).padStart(2, '0');
+        }
 
-            // Adiciona controle de zoom no canto inferior direito
+        function tempoRelativo(isoStr) {
+            const diff = Math.floor((Date.now() - new Date(isoStr)) / 60000);
+            if (diff < 1) return 'Agora';
+            if (diff < 60) return `Há ${diff} min`;
+            return `Há ${Math.floor(diff / 60)}h`;
+        }
+
+        const ORIGEM_CONFIG = {
+            app_cidadao:  { cor: '#D62828', bg: 'bg-red-50',   text: 'text-[#D62828]', label: 'App Cidadão',   icon: 'smartphone', acao: 'Ver Detalhes' },
+            planet_labs:  { cor: '#0077B6', bg: 'bg-blue-50',  text: 'text-[#0077B6]', label: 'Planet Labs',   icon: 'satellite',  acao: 'Auditar'      },
+            app_produtor: { cor: '#285430', bg: 'bg-green-50', text: 'text-[#285430]', label: 'App Produtor',  icon: 'scan',       acao: 'Ver Atestado' },
+        };
+
+        const PORTE_LABEL = { P: 'Pequeno Porte', M: 'Médio Porte', G: 'Grande Porte' };
+
+        // --- KPIs ---
+        async function carregarKPIs() {
+            try {
+                const res = await fetch(`${API}/dashboard/kpis`);
+                const d = await res.json();
+                document.getElementById('kpi-mudas').textContent = fmt(d.mudas_atestadas);
+                document.getElementById('kpi-sobrevivencia').textContent = d.sobrevivencia_pct;
+                document.getElementById('kpi-drones').textContent = d.drones_ativos;
+                document.getElementById('kpi-infracoes').textContent = fmt(d.infracoes_sem_licenca);
+                document.getElementById('kpi-selos').textContent = fmt(d.selos_verdes);
+            } catch { /* API offline — mantém o traço */ }
+        }
+
+        // --- Feed de Alertas ---
+        async function carregarAlertas() {
+            const feed = document.getElementById('alert-feed');
+            try {
+                const res = await fetch(`${API}/alertas/`);
+                const alertas = await res.json();
+                feed.innerHTML = alertas.map(a => {
+                    const c = ORIGEM_CONFIG[a.origem];
+                    const isAprovado = a.status_licenca === 'aprovado';
+                    return `
+                    <div onclick="location.href='alertas.html'" class="bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden" style="border-color:${c.cor}33">
+                        <div class="absolute left-0 top-0 bottom-0 w-1" style="background:${c.cor}"></div>
+                        <div class="flex justify-between items-start mb-2">
+                            <span class="${c.bg} ${c.text} text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                                <i data-lucide="${c.icon}" class="w-3 h-3"></i> ${c.label}
+                            </span>
+                            <span class="text-xs font-mono text-gray-400">${tempoRelativo(a.criado_em)}</span>
+                        </div>
+                        <h4 class="font-bold text-gray-800 text-sm mb-1">${a.titulo}</h4>
+                        <p class="text-xs text-gray-600 mb-3 line-clamp-2">${a.descricao}</p>
+                        <div class="flex justify-between items-center">
+                            ${isAprovado
+                                ? `<span class="text-[10px] font-bold text-[#D4A017] bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-200">Emissão Selo Verde</span>`
+                                : `<span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">CAR: ${PORTE_LABEL[a.porte_car]}</span>
+                                   <button class="text-[#0077B6] text-xs font-bold hover:underline">${c.acao}</button>`
+                            }
+                        </div>
+                    </div>`;
+                }).join('');
+                lucide.createIcons();
+            } catch {
+                feed.innerHTML = '<div class="text-center py-8 text-gray-400 text-xs">API offline — sem alertas</div>';
+            }
+        }
+
+        // --- Notificações (badge do sino) ---
+        async function carregarNotificacoes() {
+            try {
+                const res = await fetch(`${API}/notificacoes/nao-lidas/total`);
+                const { total } = await res.json();
+                const badge = document.getElementById('notif-badge');
+                if (total > 0) {
+                    badge.textContent = total;
+                    badge.classList.remove('hidden');
+                    badge.classList.add('flex');
+                }
+            } catch { /* silencioso */ }
+        }
+
+        // --- Busca com debounce ---
+        let searchTimer;
+        document.getElementById('search-input').addEventListener('input', e => {
+            clearTimeout(searchTimer);
+            const q = e.target.value.trim();
+            const results = document.getElementById('search-results');
+            if (q.length < 2) { results.classList.add('hidden'); return; }
+            searchTimer = setTimeout(async () => {
+                try {
+                    const res = await fetch(`${API}/propriedades/busca?q=${encodeURIComponent(q)}`);
+                    const data = await res.json();
+                    if (!data.length) { results.classList.add('hidden'); return; }
+                    results.innerHTML = data.map(p => `
+                        <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm" onclick="location.href='produtores.html'">
+                            <p class="font-bold text-gray-800">${p.municipio} <span class="text-[10px] font-normal text-gray-400 ml-1">${p.porte === 'G' ? 'Grande' : p.porte === 'M' ? 'Médio' : 'Pequeno'} Porte</span></p>
+                            <p class="text-[10px] font-mono text-gray-500 mt-0.5">${p.numero_car}</p>
+                        </div>`).join('');
+                    results.classList.remove('hidden');
+                } catch { results.classList.add('hidden'); }
+            }, 350);
+        });
+
+        document.addEventListener('click', e => {
+            if (!e.target.closest('#search-input') && !e.target.closest('#search-results'))
+                document.getElementById('search-results').classList.add('hidden');
+        });
+
+        // --- Mapa Leaflet ---
+        const FIRE_ICON = L.divIcon({ className: '', iconSize: [24,24], iconAnchor: [12,12],
+            html: `<div style="width:24px;height:24px;background:#D62828;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 0 15px rgba(214,40,40,.6)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div>`
+        });
+        const DRONE_ICON = L.divIcon({ className: '', iconSize: [24,24], iconAnchor: [12,12],
+            html: `<div style="width:24px;height:24px;background:#0077B6;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 4px 12px rgba(0,0,0,.2)"><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-1.6-.3-3.2.2-4.2 1.3-.7.8-.9 1.9-.4 2.8l4 6.6 4.3 4.3 6.6 4c.9.5 2 .3 2.8-.4 1.1-1 1.6-2.6 1.3-4.2z"/><path d="m11 13 4-4"/></svg></div>`
+        });
+
+        document.addEventListener('DOMContentLoaded', async () => {
+            lucide.createIcons();
+
+            const map = L.map('map', { zoomControl: false }).setView([-10.1833, -48.3333], 6);
             L.control.zoom({ position: 'bottomright' }).addTo(map);
-
-            // Layer CartoDB Positron (Limpo, Institucional, perfeito para plotar dados por cima)
             L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
-                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
-                subdomains: 'abcd',
-                maxZoom: 20
+                attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20
             }).addTo(map);
 
-            // 3. Mock de Dados (Simulando o Banco PostGIS da regra de negócio)
-            
-            // Ícones customizados via HTML/CSS nativo do Leaflet (DivIcon) para visual profissional
-            const fireIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div class="w-6 h-6 bg-brand-fire rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(214,40,40,0.6)] border-2 border-white animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
-            });
+            // Carrega pontos e polígonos da API em paralelo
+            try {
+                const [pontos, poligonos] = await Promise.all([
+                    fetch(`${API}/mapa/pontos`).then(r => r.json()),
+                    fetch(`${API}/mapa/poligonos`).then(r => r.json()),
+                ]);
 
-            const droneIcon = L.divIcon({
-                className: 'custom-div-icon',
-                html: `<div class="w-6 h-6 bg-brand-river rounded-full flex items-center justify-center shadow-lg border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-1.6-.3-3.2.2-4.2 1.3-.7.8-.9 1.9-.4 2.8l4 6.6 4.3 4.3 6.6 4c.9.5 2 .3 2.8-.4 1.1-1 1.6-2.6 1.3-4.2z"/><path d="m11 13 4-4"/></svg></div>`,
-                iconSize: [24, 24],
-                iconAnchor: [12, 12]
-            });
+                pontos.forEach(p => {
+                    const icon = p.tipo === 'foco_incendio' ? FIRE_ICON : DRONE_ICON;
+                    L.marker([p.lat, p.lng], { icon })
+                        .addTo(map)
+                        .bindPopup(`<b>${p.titulo}</b><br><span style="font-size:11px;color:#555">${p.descricao}</span>`);
+                });
 
-            // Adicionando um foco de queimada (Alerta do Cidadão)
-            L.marker([-10.7938, -49.6225], { icon: fireIcon }) // Lagoa da confusão aproximado
-                .addTo(map)
-                .bindPopup('<b class="font-display">Alerta Cidadão</b><br>Incêndio Reportado.<br><span class="text-xs text-gray-500">Integrado ao Corpo de Bombeiros</span>');
+                poligonos.forEach(p => {
+                    L.polygon(p.coordenadas, { color: '#285430', fillColor: '#285430', fillOpacity: 0.2, weight: 2, dashArray: '5,5' })
+                        .addTo(map)
+                        .bindPopup(`<b>${p.titulo}</b><br><span style="font-size:11px;color:#285430;font-weight:bold">${p.descricao}</span>`);
+                });
+            } catch {
+                // API offline — mantém mapa vazio mas funcional
+            }
 
-            // Adicionando um Drone em patrulha (Sweep)
-            const droneMarker = L.marker([-9.8833, -48.1333], { icon: droneIcon })
-                .addTo(map)
-                .bindPopup('<b class="font-display">Drone Solar Ninho #04</b><br>Status: Varredura Ativa<br><span class="text-xs text-gray-500">Bateria: 85% | Altura: 110m</span>');
-
-            // Polígono representando uma fazenda cadastrada no CAR (Restauração B2B)
-            const fazendaCoords = [
-                [-10.2, -48.4], [-10.2, -48.3],
-                [-10.3, -48.3], [-10.3, -48.4]
-            ];
-            L.polygon(fazendaCoords, {
-                color: '#285430',
-                fillColor: '#285430',
-                fillOpacity: 0.2,
-                weight: 2,
-                dashArray: '5, 5'
-            }).addTo(map)
-              .bindPopup('<b class="font-display">Fazenda Esperança (CAR)</b><br>Módulo B2B<br><span class="text-xs text-brand-cerrado font-bold">Restauração: 92% Aprovado</span>');
+            // Carrega o restante em paralelo
+            await Promise.all([carregarKPIs(), carregarAlertas(), carregarNotificacoes()]);
         });
     </script>
 </body>
