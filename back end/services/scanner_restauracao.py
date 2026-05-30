@@ -44,3 +44,5 @@ class ScannerRestauracao:
                 "classe": resultado.names[int(box.cls[0])],
             })
         return deteccoes
+    
+    

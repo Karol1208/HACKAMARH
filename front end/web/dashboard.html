@@ -1,0 +1,410 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Central de Inteligência | Projeto Canindé</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+    
+    <!-- Leaflet CSS (Mapas) -->
+    <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+
+    <!-- Configuração Tailwind (Paleta Tocantins 2030) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            light: '#F8F9FA',
+                            cerrado: '#285430',
+                            river: '#0077B6',
+                            jalapao: '#D4A017',
+                            buriti: '#E67E22',
+                            fire: '#D62828',
+                            earth: '#F1E9D2'
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F8F9FA;
+            color: #2D3748;
+            overflow: hidden; /* Mantém como app desktop */
+        }
+
+        /* Fundo Topográfico Animado */
+        .bg-topographic {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            background-color: #F8F9FA;
+            background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='topo' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 50 Q 25 25, 50 50 T 100 50' fill='none' stroke='%23285430' stroke-width='0.5' stroke-opacity='0.08'/%3E%3Cpath d='M0 70 Q 30 40, 60 70 T 100 70' fill='none' stroke='%230077B6' stroke-width='0.5' stroke-opacity='0.05'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23topo)'/%3E%3C/svg%3E");
+            animation: panBg 120s linear infinite;
+        }
+
+        @keyframes panBg {
+            from { background-position: 0 0; }
+            to { background-position: -200px 100px; }
+        }
+
+        /* Glassmorphism Classes */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(12px);
+            -webkit-backdrop-filter: blur(12px);
+            border: 1px solid rgba(255, 255, 255, 0.5);
+            box-shadow: 0 4px 20px rgba(40, 84, 48, 0.05);
+        }
+
+        /* Custom Scrollbar para áreas internas */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: rgba(0,0,0,0.02); 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: rgba(40, 84, 48, 0.2); 
+            border-radius: 10px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: rgba(40, 84, 48, 0.4); 
+        }
+
+        /* Ajustes do Leaflet Map para o tema */
+        .leaflet-container {
+            font-family: 'Inter', sans-serif;
+            border-radius: 0.75rem;
+            z-index: 10;
+        }
+        .leaflet-popup-content-wrapper {
+            border-radius: 8px;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        /* Animação do Scanner (Sweep Line) no Mapa */
+        .scanner-line {
+            position: absolute;
+            top: 0; left: 0;
+            width: 100%; height: 2px;
+            background: linear-gradient(90deg, transparent, #0077B6, transparent);
+            box-shadow: 0 0 15px #0077B6;
+            z-index: 999;
+            animation: scan 4s linear infinite;
+            pointer-events: none;
+        }
+        @keyframes scan {
+            0% { top: 0%; opacity: 0; }
+            10% { opacity: 1; }
+            90% { opacity: 1; }
+            100% { top: 100%; opacity: 0; }
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden">
+
+    <div class="bg-topographic"></div>
+
+    <!-- SIDEBAR (Menu Lateral) -->
+    <aside class="w-20 lg:w-64 flex-shrink-0 glass-panel border-r border-gray-200/50 flex flex-col justify-between h-full transition-all duration-300 z-20">
+        <div>
+            <!-- Logo Area -->
+            <div class="h-20 flex items-center justify-center lg:justify-start lg:px-6 border-b border-gray-100">
+                <div class="relative w-10 h-10 flex items-center justify-center shrink-0">
+                    <div class="absolute inset-0 bg-brand-cerrado rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm transform rotate-45 opacity-20"></div>
+                    <div class="absolute inset-1 bg-brand-river rounded-tl-xl rounded-br-xl rounded-tr-sm rounded-bl-sm transform rotate-45 opacity-80 mix-blend-multiply"></div>
+                    <i data-lucide="leaf" class="text-white w-5 h-5 z-10 relative transform -rotate-12"></i>
+                </div>
+                <div class="hidden lg:block ml-3">
+                    <h1 class="font-display font-extrabold text-xl text-brand-cerrado leading-none">Canindé</h1>
+                    <span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">SEMARH / TO</span>
+                </div>
+            </div>
+
+            <!-- Navegação -->
+            <nav class="mt-6 px-3 space-y-2">
+                <a href="dashboard.html" class="flex items-center gap-3 px-3 py-2.5 bg-brand-cerrado text-white rounded-xl shadow-md shadow-brand-cerrado/20 group">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0"></i>
+                    <span class="font-medium text-sm hidden lg:block">Visão Geral</span>
+                </a>
+                <a href="alertas.html" class="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="crosshair" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm hidden lg:block">Alertas IA (Sweep)</span>
+                    <span class="hidden lg:flex ml-auto bg-brand-fire text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                </a>
+                <a href="gestao_viveiro.html" class="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="sprout" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm hidden lg:block">Gestão de Viveiros</span>
+                </a>
+                <a href="produtores.html" class="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="users" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm hidden lg:block">Produtores (CAR)</span>
+                </a>
+                <a href="relatorios.html" class="flex items-center gap-3 px-3 py-2.5 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="line-chart" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm hidden lg:block">Relatórios ESG</span>
+                </a>
+            </nav>
+        </div>
+        
+        <!-- User Profile (Bottom) -->
+        <div class="p-4 border-t border-gray-100">
+            <div class="flex items-center justify-center lg:justify-start gap-3">
+                <img src="https://ui-avatars.com/api/?name=Admin+Gov&background=285430&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white shadow-sm">
+                <div class="hidden lg:block">
+                    <p class="text-sm font-bold text-gray-800">Admin CICC</p>
+                    <p class="text-[10px] text-gray-500 font-mono">ID: TO-4921</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- MAIN CONTENT AREA -->
+    <main class="flex-1 flex flex-col h-full relative z-10">
+        
+        <!-- Header Superior -->
+        <header class="h-20 glass-panel border-b border-gray-200/50 flex items-center justify-between px-6 shrink-0">
+            <div>
+                <h2 class="font-display font-extrabold text-2xl text-gray-900">Painel de Inteligência</h2>
+                <p class="text-xs text-gray-500 font-medium flex items-center gap-1">
+                    <i data-lucide="map-pin" class="w-3 h-3 text-brand-river"></i> Estado do Tocantins | Varredura Ativa
+                </p>
+            </div>
+            
+            <div class="flex items-center gap-4">
+                <div class="relative hidden md:block">
+                    <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
+                    <input type="text" placeholder="Buscar Nº CAR ou Município..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-river focus:ring-1 focus:ring-brand-river w-64 shadow-sm">
+                </div>
+                <button class="relative p-2 text-gray-600 hover:text-brand-cerrado hover:bg-white rounded-lg transition">
+                    <i data-lucide="bell" class="w-5 h-5"></i>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-brand-fire rounded-full animate-ping"></span>
+                    <span class="absolute top-1 right-1 w-2 h-2 bg-brand-fire rounded-full"></span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Área de Conteúdo Rolável -->
+        <div class="flex-1 overflow-y-auto p-4 md:p-6 space-y-6">
+            
+            <!-- KPIs (Indicadores COP30) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4">
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Mudas Atestadas (IA)</p>
+                        <h3 class="font-display font-extrabold text-2xl text-gray-900">1.2M</h3>
+                        <p class="text-xs text-brand-cerrado font-medium mt-1 flex items-center gap-1"><i data-lucide="arrow-up-right" class="w-3 h-3"></i> 92% Sobrevivência</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-brand-cerrado/10 flex items-center justify-center text-brand-cerrado">
+                        <i data-lucide="trees" class="w-6 h-6"></i>
+                    </div>
+                </div>
+                
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Drones em Voo</p>
+                        <h3 class="font-display font-extrabold text-2xl text-gray-900">14<span class="text-sm font-normal text-gray-500"> bases ativas</span></h3>
+                        <p class="text-xs text-brand-river font-medium mt-1">Varredura automática</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-brand-river/10 flex items-center justify-center text-brand-river">
+                        <i data-lucide="plane" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1">Infrações (S/ Licença)</p>
+                        <h3 class="font-display font-extrabold text-2xl text-gray-900">03<span class="text-sm font-normal text-gray-500"> focos</span></h3>
+                        <p class="text-xs text-brand-fire font-medium mt-1">Cruzamento CAR concluído</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-brand-fire/10 flex items-center justify-center text-brand-fire">
+                        <i data-lucide="flame" class="w-6 h-6"></i>
+                    </div>
+                </div>
+
+                <div class="bg-gradient-to-br from-brand-jalapao to-orange-500 rounded-2xl p-5 border border-brand-jalapao/20 shadow-md text-white flex items-center justify-between">
+                    <div>
+                        <p class="text-xs font-bold text-white/80 uppercase tracking-wider mb-1">Selos Verdes (B2B)</p>
+                        <h3 class="font-display font-extrabold text-2xl">452</h3>
+                        <p class="text-xs text-white font-medium mt-1">Elegíveis a Créditos</p>
+                    </div>
+                    <div class="w-12 h-12 rounded-full bg-white/20 flex items-center justify-center text-white backdrop-blur-sm">
+                        <i data-lucide="award" class="w-6 h-6"></i>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Seção de Mapa e Feed de Alertas -->
+            <div class="grid grid-cols-1 lg:grid-cols-3 gap-6 h-[500px]">
+                
+                <!-- Mapa Interativo Leaflet (Ocupa 2 colunas) -->
+                <div class="lg:col-span-2 glass-panel rounded-2xl p-2 relative overflow-hidden flex flex-col shadow-sm border border-gray-200/80">
+                    <div class="px-4 py-3 flex justify-between items-center bg-white/50 border-b border-gray-100 rounded-t-xl z-10 absolute top-2 left-2 right-2">
+                        <h3 class="font-display font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="satellite" class="text-brand-river w-4 h-4"></i> Satélite Brasil Mais + Drones
+                        </h3>
+                        <div class="flex gap-2">
+                            <span class="flex items-center gap-1 text-[10px] font-bold bg-green-100 text-green-700 px-2 py-1 rounded border border-green-200">
+                                <span class="w-1.5 h-1.5 bg-green-500 rounded-full animate-pulse"></span> Sweep IA Online
+                            </span>
+                        </div>
+                    </div>
+                    
+                    <!-- Container do Mapa -->
+                    <div id="map" class="w-full h-full rounded-xl z-0 relative">
+                        <!-- Simulação visual da Varredura (Sweep) -->
+                        <div class="scanner-line"></div>
+                    </div>
+                </div>
+
+                <!-- Feed de Alertas (1 coluna) -->
+                <div class="glass-panel rounded-2xl border border-gray-200/80 shadow-sm flex flex-col overflow-hidden">
+                    <div class="px-5 py-4 border-b border-gray-200 bg-white/50">
+                        <h3 class="font-display font-bold text-gray-800">Fila de Triagem (IA)</h3>
+                        <p class="text-xs text-gray-500">Cruzamento Automático CAR x Licenças</p>
+                    </div>
+                    
+                    <div class="flex-1 overflow-y-auto p-4 space-y-4">
+                        
+                        <!-- Card Alerta 1 (App Cidadão) -->
+                        <div class="bg-white border border-brand-fire/30 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-fire"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-red-50 text-brand-fire text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                                    <i data-lucide="smartphone" class="w-3 h-3"></i> App Cidadão
+                                </span>
+                                <span class="text-xs font-mono text-gray-400">Há 2 min</span>
+                            </div>
+                            <h4 class="font-bold text-gray-800 text-sm mb-1">Foco de Calor Confirmado</h4>
+                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">Denúncia georreferenciada no município de Lagoa da Confusão. Protege (Bombeiros) acionado.</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">CAR: Grande Porte</span>
+                                <button class="text-brand-river text-xs font-bold hover:underline">Ver Detalhes</button>
+                            </div>
+                        </div>
+
+                        <!-- Card Alerta 2 (Satélite) -->
+                        <div class="bg-white border border-brand-river/30 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-river"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-blue-50 text-brand-river text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                                    <i data-lucide="satellite" class="w-3 h-3"></i> Planet Labs
+                                </span>
+                                <span class="text-xs font-mono text-gray-400">Há 15 min</span>
+                            </div>
+                            <h4 class="font-bold text-gray-800 text-sm mb-1">Supressão Vegetal (Sweep)</h4>
+                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">Alteração de biomassa detectada. Status da Licença: VENCIDA. Auto de infração em rascunho.</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-mono text-gray-500 bg-gray-100 px-1.5 py-0.5 rounded">CAR: Médio Porte</span>
+                                <button class="text-brand-river text-xs font-bold hover:underline">Auditar</button>
+                            </div>
+                        </div>
+
+                        <!-- Card Positivo (Scanner Mudas) -->
+                        <div class="bg-white border border-brand-cerrado/30 rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden">
+                            <div class="absolute left-0 top-0 bottom-0 w-1 bg-brand-cerrado"></div>
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="bg-green-50 text-brand-cerrado text-[10px] font-bold px-2 py-0.5 rounded uppercase flex items-center gap-1">
+                                    <i data-lucide="scan" class="w-3 h-3"></i> App Produtor
+                                </span>
+                                <span class="text-xs font-mono text-gray-400">Há 1h</span>
+                            </div>
+                            <h4 class="font-bold text-gray-800 text-sm mb-1">Atestado PRAD Aprovado</h4>
+                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">Lote Viveiro Palmas atingiu 1.5m. Curva de crescimento atestada por IA.</p>
+                            <div class="flex justify-between items-center">
+                                <span class="text-[10px] font-bold text-brand-jalapao bg-yellow-50 px-1.5 py-0.5 rounded border border-yellow-200">Emissão Selo Verde</span>
+                            </div>
+                        </div>
+
+                    </div>
+                </div>
+            </div>
+            
+        </div>
+    </main>
+
+    <!-- Scripts de Funcionalidade Global -->
+    <!-- Leaflet JS -->
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script>
+        // 1. Inicializar Ícones
+        lucide.createIcons();
+
+        // 2. Inicializar Mapa Leaflet (Focado no Tocantins)
+        document.addEventListener('DOMContentLoaded', () => {
+            // Coordenadas centrais aproximadas do Tocantins
+            const map = L.map('map', {
+                zoomControl: false // Movemos o controle para customizar se necessário
+            }).setView([-10.1833, -48.3333], 6);
+
+            // Adiciona controle de zoom no canto inferior direito
+            L.control.zoom({ position: 'bottomright' }).addTo(map);
+
+            // Layer CartoDB Positron (Limpo, Institucional, perfeito para plotar dados por cima)
+            L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
+                attribution: '&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors &copy; <a href="https://carto.com/attributions">CARTO</a>',
+                subdomains: 'abcd',
+                maxZoom: 20
+            }).addTo(map);
+
+            // 3. Mock de Dados (Simulando o Banco PostGIS da regra de negócio)
+            
+            // Ícones customizados via HTML/CSS nativo do Leaflet (DivIcon) para visual profissional
+            const fireIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="w-6 h-6 bg-brand-fire rounded-full flex items-center justify-center shadow-[0_0_15px_rgba(214,40,40,0.6)] border-2 border-white animate-pulse"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            const droneIcon = L.divIcon({
+                className: 'custom-div-icon',
+                html: `<div class="w-6 h-6 bg-brand-river rounded-full flex items-center justify-center shadow-lg border-2 border-white"><svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17.8 19.2 16 11l3.5-3.5C21 6 21.5 4 21 3c-1-.5-3 0-4.5 1.5L13 8 4.8 6.2c-1.6-.3-3.2.2-4.2 1.3-.7.8-.9 1.9-.4 2.8l4 6.6 4.3 4.3 6.6 4c.9.5 2 .3 2.8-.4 1.1-1 1.6-2.6 1.3-4.2z"/><path d="m11 13 4-4"/></svg></div>`,
+                iconSize: [24, 24],
+                iconAnchor: [12, 12]
+            });
+
+            // Adicionando um foco de queimada (Alerta do Cidadão)
+            L.marker([-10.7938, -49.6225], { icon: fireIcon }) // Lagoa da confusão aproximado
+                .addTo(map)
+                .bindPopup('<b class="font-display">Alerta Cidadão</b><br>Incêndio Reportado.<br><span class="text-xs text-gray-500">Integrado ao Corpo de Bombeiros</span>');
+
+            // Adicionando um Drone em patrulha (Sweep)
+            const droneMarker = L.marker([-9.8833, -48.1333], { icon: droneIcon })
+                .addTo(map)
+                .bindPopup('<b class="font-display">Drone Solar Ninho #04</b><br>Status: Varredura Ativa<br><span class="text-xs text-gray-500">Bateria: 85% | Altura: 110m</span>');
+
+            // Polígono representando uma fazenda cadastrada no CAR (Restauração B2B)
+            const fazendaCoords = [
+                [-10.2, -48.4], [-10.2, -48.3],
+                [-10.3, -48.3], [-10.3, -48.4]
+            ];
+            L.polygon(fazendaCoords, {
+                color: '#285430',
+                fillColor: '#285430',
+                fillOpacity: 0.2,
+                weight: 2,
+                dashArray: '5, 5'
+            }).addTo(map)
+              .bindPopup('<b class="font-display">Fazenda Esperança (CAR)</b><br>Módulo B2B<br><span class="text-xs text-brand-cerrado font-bold">Restauração: 92% Aprovado</span>');
+        });
+    </script>
+</body>
+</html>
