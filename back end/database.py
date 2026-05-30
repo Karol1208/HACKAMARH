@@ -4,10 +4,11 @@ from mysql.connector import Error
 try:
     # 1. Configurar a conexão com os mesmos dados do Workbench
     conexao = mysql.connector.connect(
-        host='localhost',        # Ou o IP do seu servidor
-        database='seu_banco',    # Nome do banco de dados
+        host='127.0.0.1',        # Endereço do servidor MySQL (ex: 'localhost' ou IP)
+        port=3306,               # Porta do MySQL
+        database='hackamarh',    # Nome do banco de dados
         user='root',             # Seu usuário do MySQL
-        password='sua_senha'     # Sua senha do MySQL
+        password=''              # Sua senha do MySQL
     )
 
     if conexao.is_connected():
