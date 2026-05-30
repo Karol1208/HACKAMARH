@@ -1,31 +1,43 @@
-import mysql.connector
-from mysql.connector import Error
+import os
+import psycopg2
+from psycopg2 import Error
+
+conexao = None
 
 try:
-    # 1. Configurar a conexão com os mesmos dados do Workbench
-    conexao = mysql.connector.connect(
-        host='127.0.0.1',        # Endereço do servidor MySQL (ex: 'localhost' ou IP)
-        port=3306,               # Porta do MySQL
-        database='hackamarh',    # Nome do banco de dados
-        user='root',             # Seu usuário do MySQL
-        password=''              # Sua senha do MySQL
+    # Ler configuração via variáveis de ambiente (mais seguro)
+    host = os.getenv('DB_HOST', '127.0.0.1')
+    port = int(os.getenv('DB_PORT', 5432))
+    database = os.getenv('DB_NAME', 'hackamarh')
+    user = os.getenv('DB_USER', 'postgres')
+    password = os.getenv('DB_PASSWORD', '123456')  # sem valor padrão por segurança
+
+    if not password:
+        raise ValueError('DB_PASSWORD ')
+
+    conexao = psycopg2.connect(
+        host=host,
+        port=port,
+        database=database,
+        user=user,
+        password=password
     )
 
-    if conexao.is_connected():
-        print("Conexão estabelecida com sucesso!")
-        
-        cursor = conexao.cursor()
-        
-        cursor.execute("SELECT VERSION();")
-        
-        linha = cursor.fetchone()
-        print(f"Versão do MySQL: {linha[0]}")
+    print("Conexão estabelecida com sucesso!")
 
-except Error as e:
-    print(f"Erro ao conectar ao MySQL: {e}")
+    with conexao.cursor() as cursor:
+        cursor.execute("SELECT version();")
+        linha = cursor.fetchone()
+        print(f"Versão do PostgreSQL: {linha[0]}")
+
+except (Exception, Error) as error:
+    print(f"Erro ao conectar ao PostgreSQL: {error}")
 
 finally:
-    if 'conexao' in locals() and conexao.is_connected():
-        cursor.close()
-        conexao.close()
-        print("Conexão com o MySQL encerrada.")
+    if conexao is not None:
+        try:
+            if getattr(conexao, 'closed', 1) == 0:
+                conexao.close()
+                print("Conexão com o PostgreSQL encerrada.")
+        except Exception:
+            pass
