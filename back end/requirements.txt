@@ -2,3 +2,6 @@ psycopg2-binary
 fastapi
 uvicorn
 pydantic[email]
+Pillow
+httpx
+ultralytics
