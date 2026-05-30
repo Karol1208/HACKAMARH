@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Canindé | Gestão de Viveiros e Mudas</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- Google Fonts -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600&family=Plus+Jakarta+Sans:wght@600;700;800&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: { sans: ['Inter'], display: ['Plus Jakarta Sans'] },
+                    colors: { 
+                        brand: { 
+                            light: '#F8F9FA', cerrado: '#285430', river: '#0077B6', 
+                            jalapao: '#D4A017', buriti: '#E67E22', fire: '#D62828'
+                        } 
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body { font-family: 'Inter', sans-serif; overflow: hidden; background-color: #F8F9FA; color: #2D3748; }
+        
+        /* Fundo Topográfico COP30 */
+        .bg-topographic {
+            position: fixed; top: 0; left: 0; width: 100vw; height: 100vh; z-index: -1;
+            background-color: #F8F9FA;
+            background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='topo' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 50 Q 25 25, 50 50 T 100 50' fill='none' stroke='%23285430' stroke-width='0.5' stroke-opacity='0.1'/%3E%3Cpath d='M0 70 Q 30 40, 60 70 T 100 70' fill='none' stroke='%230077B6' stroke-width='0.5' stroke-opacity='0.08'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23topo)'/%3E%3C/svg%3E");
+            animation: panBg 120s linear infinite;
+        }
+        @keyframes panBg { from { background-position: 0 0; } to { background-position: -200px 100px; } }
+
+        /* Componentes Glassmorphism */
+        .glass-panel {
+            background: rgba(255, 255, 255, 0.85);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 10px 30px -10px rgba(40, 84, 48, 0.08);
+        }
+
+        .glass-card {
+            background: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0, 0, 0, 0.05);
+            box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.05);
+            transition: all 0.2s ease;
+        }
+        .glass-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+            border-color: rgba(40, 84, 48, 0.2);
+        }
+
+        /* Status Badges */
+        .badge-prad { background: #EFF6FF; color: #0077B6; border: 1px solid #BFDBFE; }
+        .badge-voluntario { background: #F3F4F6; color: #4B5563; border: 1px solid #E5E7EB; }
+        .badge-gerado { background: #F0FDF4; color: #285430; border: 1px solid #BBF7D0; }
+
+        /* Custom Scrollbar escondida no mobile e suave no desktop */
+        ::-webkit-scrollbar { width: 4px; height: 4px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: rgba(40, 84, 48, 0.15); border-radius: 10px; }
+        ::-webkit-scrollbar-thumb:hover { background: rgba(40, 84, 48, 0.3); }
+
+        /* Utilitários Customizados para Inputs */
+        .input-custom {
+            background: rgba(255, 255, 255, 0.8);
+            backdrop-filter: blur(8px);
+            border: 1px solid rgba(0, 0, 0, 0.08);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .input-custom:focus {
+            background: rgba(255, 255, 255, 1);
+            border-color: #0077B6;
+            box-shadow: 0 0 0 3px rgba(0, 119, 182, 0.15);
+            outline: none;
+        }
+
+        /* Overlay Mobile */
+        .overlay {
+            visibility: hidden;
+            opacity: 0;
+            transition: all 0.3s ease;
+        }
+        .overlay.active {
+            visibility: visible;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="flex h-screen w-screen overflow-hidden">
+
+    <!-- Background Animado -->
+    <div class="bg-topographic"></div>
+
+    <!-- OVERLAY MOBILE -->
+    <div id="mobile-overlay" class="fixed inset-0 bg-brand-cerrado/30 backdrop-blur-sm z-30 overlay lg:hidden" onclick="toggleSidebar()"></div>
+
+    <!-- SIDEBAR DE NAVEGAÇÃO -->
+    <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:relative lg:translate-x-0 w-64 shrink-0 glass-panel border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-300 ease-in-out">
+        <div>
+            <!-- Logo Institucional -->
+            <div class="h-20 flex items-center justify-between lg:justify-start px-6 border-b border-gray-100">
+                <div class="flex items-center gap-3">
+                    <div class="relative w-10 h-10 flex items-center justify-center shrink-0">
+                        <div class="absolute inset-0 bg-brand-cerrado rounded-tl-xl rounded-br-xl opacity-20 transform rotate-45"></div>
+                        <div class="absolute inset-1 bg-brand-river rounded-tl-xl rounded-br-xl opacity-80 transform rotate-45 mix-blend-multiply"></div>
+                        <i data-lucide="leaf" class="text-white w-5 h-5 z-10 relative transform -rotate-12"></i>
+                    </div>
+                    <div>
+                        <h1 class="font-display font-extrabold text-xl text-brand-cerrado leading-none">Canindé</h1>
+                        <span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">SEMARH / TO</span>
+                    </div>
+                </div>
+                <!-- Botão Fechar (Apenas Mobile) -->
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-gray-700 bg-gray-50 rounded-lg p-1.5 border border-gray-200">
+                    <i data-lucide="x" class="w-5 h-5"></i>
+                </button>
+            </div>
+
+            <!-- Menus -->
+            <nav class="mt-6 px-3 space-y-2">
+                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm">Visão Geral</span>
+                </a>
+                <a href="alertas.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="crosshair" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm">Alertas IA (Sweep)</span>
+                    <span class="ml-auto bg-brand-fire text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>
+                </a>
+                <a href="gestao_viveiro.html" class="flex items-center gap-3 px-4 py-3 bg-brand-cerrado text-white rounded-xl shadow-md transition group">
+                    <i data-lucide="sprout" class="w-5 h-5 shrink-0"></i>
+                    <span class="font-medium text-sm">Gestão de Viveiros</span>
+                </a>
+                <a href="produtores.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="users" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm">Produtores (CAR)</span>
+                </a>
+                <a href="relatorios.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group">
+                    <i data-lucide="bar-chart-2" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i>
+                    <span class="font-medium text-sm">Relatórios ESG</span>
+                </a>
+            </nav>
+        </div>
+        
+        <!-- User Profile -->
+        <div class="p-4 border-t border-gray-100">
+            <div class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-gray-100">
+                <div class="w-10 h-10 rounded-full bg-brand-river text-white flex items-center justify-center font-bold text-sm border-2 border-white shadow-sm shrink-0">
+                    NV
+                </div>
+                <div>
+                    <p class="text-sm font-bold text-gray-800 leading-tight">Núcleo Viveiros</p>
+                    <p class="text-[10px] text-gray-500 font-mono">Naturatins-TO</p>
+                </div>
+            </div>
+        </div>
+    </aside>
+
+    <!-- ÁREA PRINCIPAL -->
+    <main class="flex-1 flex flex-col h-full relative z-10 overflow-hidden w-full">
+        
+        <!-- Header Superior -->
+        <header class="h-20 glass-panel border-b border-gray-200/50 flex items-center justify-between px-4 lg:px-6 shrink-0 z-20">
+            <div class="flex items-center gap-3">
+                <!-- Hamburger Menu (Mobile) -->
+                <button onclick="toggleSidebar()" class="lg:hidden text-gray-600 hover:text-brand-cerrado bg-white/50 border border-gray-200 p-2 rounded-lg transition shadow-sm">
+                    <i data-lucide="menu" class="w-5 h-5"></i>
+                </button>
+                
+                <div>
+                    <h2 class="font-display font-extrabold text-xl lg:text-2xl text-gray-900 leading-tight">Estoque e Distribuição</h2>
+                    <p class="text-[10px] lg:text-xs text-gray-500 font-medium flex items-center gap-1 mt-0.5">
+                        <i data-lucide="map-pin" class="w-3 h-3 text-brand-cerrado"></i> 4 Viveiros Estaduais
+                    </p>
+                </div>
+            </div>
+            
+            <div class="flex items-center gap-2 lg:gap-3">
+                <button class="hidden sm:flex bg-white border border-gray-200 text-gray-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition shadow-sm items-center gap-2">
+                    <i data-lucide="download" class="w-4 h-4"></i> Exportar
+                </button>
+                <button class="bg-brand-cerrado text-white text-sm font-bold px-3 py-2.5 lg:px-4 rounded-xl hover:bg-green-800 transition shadow-md shadow-brand-cerrado/20 flex items-center gap-2">
+                    <i data-lucide="plus" class="w-4 h-4"></i> <span class="hidden sm:inline">Nova Semeadura</span>
+                </button>
+            </div>
+        </header>
+
+        <!-- Container Rolável -->
+        <div class="flex-1 overflow-x-hidden overflow-y-auto p-4 lg:p-6 flex flex-col gap-6">
+            
+            <!-- Painel de KPIs e Filtros Customizados -->
+            <div class="flex flex-col xl:flex-row gap-4 shrink-0">
+                
+                <!-- KPIs de Estoque (Grid Responsivo) -->
+                <div class="grid grid-cols-2 lg:grid-cols-4 gap-3 lg:gap-4 flex-1">
+                    <div class="bg-white p-4 rounded-xl border-l-4 border-l-brand-cerrado shadow-sm">
+                        <p class="text-[9px] lg:text-[10px] text-gray-500 uppercase font-bold tracking-wider">Estoque Total Ativo</p>
+                        <h3 class="font-display text-xl lg:text-2xl font-extrabold text-gray-900 mt-1">145.000</h3>
+                        <p class="text-[10px] lg:text-xs text-brand-cerrado font-medium mt-1">Sementes & Mudas</p>
+                    </div>
+                    
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm relative overflow-hidden">
+                        <div class="absolute right-0 bottom-0 opacity-5 -mb-2 -mr-2"><i data-lucide="sprout" class="w-16 h-16"></i></div>
+                        <p class="text-[9px] lg:text-[10px] text-gray-500 uppercase font-bold tracking-wider">Prontas (Disponíveis)</p>
+                        <h3 class="font-display text-xl lg:text-2xl font-extrabold text-gray-900 mt-1">32.400</h3>
+                        <p class="text-[10px] lg:text-xs text-brand-river font-medium mt-1 flex items-center gap-1"><i data-lucide="trending-up" class="w-3 h-3"></i> Alta Demanda</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border border-gray-100 shadow-sm">
+                        <p class="text-[9px] lg:text-[10px] text-gray-500 uppercase font-bold tracking-wider">Espécie Mais Pedida</p>
+                        <h3 class="font-display text-md lg:text-lg font-extrabold text-gray-900 mt-1 truncate">Parkia platycephala</h3>
+                        <p class="text-[10px] lg:text-xs text-gray-500 mt-1 truncate">Fava de Bolota</p>
+                    </div>
+
+                    <div class="bg-white p-4 rounded-xl border-l-4 border-l-brand-fire shadow-sm">
+                        <p class="text-[9px] lg:text-[10px] text-gray-500 uppercase font-bold tracking-wider">Alerta de Estoque</p>
+                        <h3 class="font-display text-md lg:text-lg font-extrabold text-gray-900 mt-1">Ipê Amarelo</h3>
+                        <p class="text-[10px] lg:text-xs text-brand-fire font-bold mt-1">Apenas 1.200 un.</p>
+                    </div>
+                </div>
+
+                <!-- Barra de Filtros (Custom UI) -->
+                <div class="bg-white p-4 rounded-xl border border-gray-200 shadow-sm flex flex-col justify-center gap-3 shrink-0 w-full xl:w-80">
+                    <h4 class="text-xs font-bold text-gray-800 uppercase tracking-wider mb-1">Filtros Avançados</h4>
+                    
+                    <!-- Select Customizado (Dropdown) -->
+                    <div class="relative custom-dropdown" id="dropdown-wrapper">
+                        <button type="button" onclick="toggleDropdown()" class="w-full flex items-center justify-between text-sm input-custom rounded-xl px-4 py-2.5 text-gray-700 font-medium">
+                            <span id="dropdown-selected" class="flex items-center gap-2"><i data-lucide="map" class="w-4 h-4 text-gray-400"></i> Todos os Viveiros (4)</span>
+                            <i data-lucide="chevron-down" id="dropdown-icon" class="w-4 h-4 text-gray-400 transition-transform duration-200"></i>
+                        </button>
+                        
+                        <!-- Menu de Opções -->
+                        <div id="dropdown-menu" class="absolute z-50 w-full mt-2 bg-white/95 backdrop-blur-xl border border-gray-100 rounded-xl shadow-xl overflow-hidden hidden opacity-0 transition-opacity duration-200">
+                            <ul class="py-1">
+                                <li><button onclick="selectOption('Todos os Viveiros (4)')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-river/5 hover:text-brand-river font-medium transition">Todos os Viveiros (4)</button></li>
+                                <li><button onclick="selectOption('Viveiro Palmas')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-river/5 hover:text-brand-river font-medium transition">Viveiro Palmas</button></li>
+                                <li><button onclick="selectOption('Viveiro Araguaína')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-river/5 hover:text-brand-river font-medium transition">Viveiro Araguaína</button></li>
+                                <li><button onclick="selectOption('Viveiro Gurupi')" class="w-full text-left px-4 py-2.5 text-sm text-gray-700 hover:bg-brand-river/5 hover:text-brand-river font-medium transition">Viveiro Gurupi</button></li>
+                            </ul>
+                        </div>
+                    </div>
+
+                    <!-- Input de Pesquisa Customizado -->
+                    <div class="relative">
+                        <i data-lucide="search" class="absolute left-4 top-1/2 transform -translate-y-1/2 w-4 h-4 text-gray-400"></i>
+                        <input type="text" placeholder="Buscar Nº CAR ou Lote..." class="w-full text-sm input-custom rounded-xl pl-10 pr-4 py-2.5 text-gray-700 placeholder-gray-400">
+                    </div>
+                </div>
+            </div>
+
+            <!-- ========================================== -->
+            <!-- BOARD KANBAN (Mobile Scroll Snap)          -->
+            <!-- ========================================== -->
+            <div class="flex-1 flex gap-4 lg:gap-6 pb-4 min-h-[400px] overflow-x-auto snap-x snap-mandatory">
+                
+                <!-- COLUNA 1: Solicitações -->
+                <div class="w-[85vw] sm:w-[320px] shrink-0 flex flex-col bg-gray-100/50 rounded-2xl p-3 lg:p-4 border border-gray-200 snap-center">
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <h4 class="font-display font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="smartphone" class="w-4 h-4 text-gray-500"></i> Solicitações App
+                        </h4>
+                        <span class="bg-gray-200 text-gray-700 text-xs font-bold px-2.5 py-0.5 rounded-full">2</span>
+                    </div>
+                    
+                    <div class="space-y-3 overflow-y-auto pr-1">
+                        <!-- Card: PRAD -->
+                        <div class="glass-card rounded-xl p-4 cursor-grab border-l-4 border-l-brand-river">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="badge-prad text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">PRAD Obrigatório</span>
+                                <span class="text-[10px] text-gray-400 font-mono">Hoje</span>
+                            </div>
+                            <p class="font-bold text-sm text-gray-900 mb-1">Fazenda Boi Verde</p>
+                            <p class="text-xs text-gray-600 mb-3 line-clamp-2">500 mudas (Parkia platycephala e Ipê). Recuperação de APP.</p>
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 border-t border-gray-100 gap-3">
+                                <span class="text-[10px] text-gray-500 font-mono bg-gray-100 px-1.5 py-0.5 rounded inline-block w-max">CAR: TO-882...</span>
+                                <button class="w-full sm:w-auto text-xs font-bold text-white bg-brand-river hover:bg-blue-700 px-3 py-1.5 rounded-lg transition shadow-sm">
+                                    Avaliar
+                                </button>
+                            </div>
+                        </div>
+
+                        <!-- Card: Voluntário -->
+                        <div class="glass-card rounded-xl p-4 cursor-grab">
+                            <div class="flex justify-between items-start mb-2">
+                                <span class="badge-voluntario text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider">Plantio Voluntário</span>
+                                <span class="text-[10px] text-gray-400 font-mono">Ontem</span>
+                            </div>
+                            <p class="font-bold text-sm text-gray-900 mb-1">Associação Quilombola</p>
+                            <p class="text-xs text-gray-600 mb-3">200 mudas frutíferas do Cerrado (Pequi e Buriti).</p>
+                            <div class="flex flex-col sm:flex-row sm:justify-between sm:items-center pt-3 border-t border-gray-100 gap-3">
+                                <span class="text-[10px] text-gray-500">Região Jalapão</span>
+                                <button class="w-full sm:w-auto text-xs font-bold text-white bg-brand-river hover:bg-blue-700 px-3 py-1.5 rounded-lg transition shadow-sm">
+                                    Avaliar
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA 2: Em Preparo -->
+                <div class="w-[85vw] sm:w-[320px] shrink-0 flex flex-col bg-gray-100/50 rounded-2xl p-3 lg:p-4 border border-gray-200 snap-center">
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <h4 class="font-display font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="sun" class="w-4 h-4 text-brand-jalapao"></i> Em Preparo (Estufa)
+                        </h4>
+                        <span class="bg-yellow-100 text-brand-jalapao text-xs font-bold px-2.5 py-0.5 rounded-full">1</span>
+                    </div>
+                    
+                    <div class="space-y-3 overflow-y-auto pr-1">
+                        <div class="glass-card rounded-xl p-4 cursor-grab">
+                            <div class="flex justify-between items-center mb-3">
+                                <span class="text-[9px] font-bold text-brand-cerrado bg-green-50 border border-green-100 px-1.5 py-0.5 rounded uppercase tracking-wider">
+                                    Viveiro Palmas
+                                </span>
+                                <button class="text-gray-400 hover:text-brand-cerrado bg-gray-50 p-1 rounded"><i data-lucide="more-horizontal" class="w-4 h-4"></i></button>
+                            </div>
+                            <p class="font-bold text-sm text-gray-900">Lote #902 - Ipê Amarelo</p>
+                            <p class="text-xs text-gray-500 mb-3">Destinado a: Múltiplos Produtores</p>
+                            
+                            <div class="bg-gray-50 p-2.5 rounded-lg border border-gray-100">
+                                <div class="flex justify-between text-[10px] font-bold mb-1.5">
+                                    <span class="text-gray-600">Germinação</span>
+                                    <span class="text-brand-jalapao">45%</span>
+                                </div>
+                                <div class="w-full bg-gray-200 rounded-full h-1.5">
+                                  <div class="bg-brand-jalapao h-1.5 rounded-full transition-all" style="width: 45%"></div>
+                                </div>
+                                <p class="text-[9px] text-gray-500 mt-1.5 text-right font-mono">Restam 45 dias</p>
+                            </div>
+
+                            <button class="w-full mt-3 flex items-center justify-center gap-2 py-2.5 bg-white border border-gray-200 rounded-lg text-xs font-bold text-gray-700 hover:bg-gray-50 transition shadow-sm">
+                                <i data-lucide="arrow-right" class="w-3 h-3"></i> Mover para Prontas
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- COLUNA 3: Prontas -->
+                <div class="w-[85vw] sm:w-[320px] shrink-0 flex flex-col bg-gray-100/50 rounded-2xl p-3 lg:p-4 border border-gray-200 snap-center">
+                    <div class="flex justify-between items-center mb-4 px-1">
+                        <h4 class="font-display font-bold text-gray-800 flex items-center gap-2">
+                            <i data-lucide="package-check" class="w-4 h-4 text-brand-cerrado"></i> Prontas p/ Retirada
+                        </h4>
+                        <span class="bg-green-100 text-brand-cerrado text-xs font-bold px-2.5 py-0.5 rounded-full">1</span>
+                    </div>
+                    
+                    <div class="space-y-3 overflow-y-auto pr-1">
+                        <div class="glass-card rounded-xl p-4 border-l-4 border-l-brand-cerrado cursor-grab">
+                            <div class="flex justify-between items-start mb-3">
+                                <span class="badge-gerado text-[9px] px-2 py-0.5 rounded font-bold uppercase tracking-wider flex items-center gap-1">
+                                    QR Code Gerado
+                                </span>
+                                <i data-lucide="qr-code" class="w-5 h-5 text-gray-800"></i>
+                            </div>
+                            
+                            <p class="font-bold text-sm text-gray-900">Lote #881 - Misto Cerrado</p>
+                            
+                            <div class="mt-3 space-y-2 text-xs">
+                                <div class="flex justify-between text-gray-600"><span>Quantidade:</span> <span class="font-bold text-gray-900 bg-gray-50 px-1 rounded">1.200 un.</span></div>
+                                <div class="flex justify-between text-gray-600"><span>Destino:</span> <span class="font-bold text-gray-900 truncate max-w-[120px]">Faz. Rio Claro</span></div>
+                                <div class="flex justify-between text-gray-600"><span>Viveiro:</span> <span class="font-bold text-brand-cerrado">Araguaína</span></div>
+                            </div>
+                            
+                            <div class="mt-4 pt-3 border-t border-gray-100 flex flex-col sm:flex-row gap-2">
+                                <button class="w-full sm:w-1/2 py-2.5 bg-white border border-gray-200 hover:bg-gray-50 rounded-lg text-xs font-bold text-gray-700 transition flex items-center justify-center gap-1 shadow-sm">
+                                    <i data-lucide="printer" class="w-3 h-3"></i> Imprimir
+                                </button>
+                                <button class="w-full sm:w-1/2 py-2.5 bg-brand-cerrado hover:bg-green-800 text-white rounded-lg text-xs font-bold transition shadow-sm flex items-center justify-center gap-1">
+                                    Dar Baixa <i data-lucide="check" class="w-3 h-3"></i>
+                                </button>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Scripts Customizados -->
+    <script>
+        // Inicializador de Ícones
+        lucide.createIcons();
+
+        // 1. Lógica do Menu Mobile Responsivo (Sidebar Toggle)
+        function toggleSidebar() {
+            const sidebar = document.getElementById('sidebar');
+            const overlay = document.getElementById('mobile-overlay');
+            
+            // Alterna a classe de translação para abrir/fechar a sidebar
+            sidebar.classList.toggle('-translate-x-full');
+            
+            // Exibe/Esconde a máscara de fundo
+            overlay.classList.toggle('active');
+        }
+
+        // 2. Lógica do Dropdown Customizado (Filtros de Viveiros)
+        const dropdownMenu = document.getElementById('dropdown-menu');
+        const dropdownIcon = document.getElementById('dropdown-icon');
+        const dropdownSelected = document.getElementById('dropdown-selected');
+        let isDropdownOpen = false;
+
+        function toggleDropdown() {
+            isDropdownOpen = !isDropdownOpen;
+            if (isDropdownOpen) {
+                dropdownMenu.classList.remove('hidden');
+                // Pequeno delay para a transição CSS de opacidade funcionar
+                setTimeout(() => dropdownMenu.classList.remove('opacity-0'), 10);
+                dropdownIcon.classList.add('rotate-180');
+            } else {
+                dropdownMenu.classList.add('opacity-0');
+                dropdownIcon.classList.remove('rotate-180');
+                // Aguarda a animação antes de esconder do DOM
+                setTimeout(() => dropdownMenu.classList.add('hidden'), 200);
+            }
+        }
+
+        function selectOption(text) {
+            // Atualiza o texto visual mantendo o ícone de mapa
+            dropdownSelected.innerHTML = `<i data-lucide="map" class="w-4 h-4 text-brand-river"></i> ${text}`;
+            // Reinicializa os ícones do Lucide para o elemento recém-criado
+            lucide.createIcons();
+            toggleDropdown();
+        }
+
+        // Fecha o dropdown se o usuário clicar fora dele
+        document.addEventListener('click', (e) => {
+            const wrapper = document.getElementById('dropdown-wrapper');
+            if (wrapper && !wrapper.contains(e.target) && isDropdownOpen) {
+                toggleDropdown();
+            }
+        });
+    </script>
+</body>
+</html>
