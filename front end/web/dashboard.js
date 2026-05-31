@@ -1,4 +1,9 @@
 const API = 'http://127.0.0.1:8000';
+let mapRef = null;
+let markersLayer = null;
+let polisLayer = null;
+let municipioAtual = null;
+let searchTimer;
 
 function fmt(n) {
     if (n >= 1_000_000) return (n / 1_000_000).toFixed(1) + 'M';
@@ -21,9 +26,10 @@ const ORIGEM_CONFIG = {
 
 const PORTE_LABEL = { P: 'Pequeno Porte', M: 'Médio Porte', G: 'Grande Porte' };
 
-async function carregarKPIs() {
+async function carregarKPIs(municipio = null) {
     try {
-        const res = await fetch(`${API}/dashboard/kpis`);
+        const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
+        const res = await fetch(`${API}/dashboard/kpis${params}`);
         const d = await res.json();
         document.getElementById('kpi-mudas').textContent = fmt(d.mudas_atestadas);
         document.getElementById('kpi-sobrevivencia').textContent = d.sobrevivencia_pct;
@@ -33,13 +39,18 @@ async function carregarKPIs() {
     } catch { /* API offline — mantém o traço */ }
 }
 
-async function carregarAlertas() {
+async function carregarAlertas(municipio = null) {
     const feed = document.getElementById('alert-feed');
     try {
-        const res = await fetch(`${API}/alertas/`);
+        const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
+        const res = await fetch(`${API}/alertas/${params}`);
         const alertas = await res.json();
+        if (!alertas.length) {
+            feed.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">Nenhum alerta encontrado${municipio ? ` em ${municipio}` : ''}</div>`;
+            return;
+        }
         feed.innerHTML = alertas.map(a => {
-            const c = ORIGEM_CONFIG[a.origem];
+            const c = ORIGEM_CONFIG[a.origem] || ORIGEM_CONFIG.app_cidadao;
             const isAprovado = a.status_licenca === 'aprovado';
             return `
             <div onclick="location.href='alertas.html'" class="bg-white border rounded-xl p-4 shadow-sm hover:shadow-md transition cursor-pointer relative overflow-hidden" style="border-color:${c.cor}33">
@@ -80,7 +91,73 @@ async function carregarNotificacoes() {
     } catch { /* silencioso */ }
 }
 
-let searchTimer;
+async function carregarMapa(municipio = null) {
+    if (!mapRef || !markersLayer || !polisLayer) return;
+    markersLayer.clearLayers();
+    polisLayer.clearLayers();
+    try {
+        const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
+        const [pontos, poligonos] = await Promise.all([
+            fetch(`${API}/mapa/pontos${params}`).then(r => r.json()),
+            fetch(`${API}/mapa/poligonos${params}`).then(r => r.json()),
+        ]);
+        pontos.forEach(p => {
+            const icon = p.tipo === 'foco_incendio' ? FIRE_ICON : DRONE_ICON;
+            L.marker([p.lat, p.lng], { icon })
+                .addTo(markersLayer)
+                .bindPopup(`<b>${p.titulo}</b><br><span style="font-size:11px;color:#555">${p.descricao}</span>`);
+        });
+        poligonos.forEach(p => {
+            L.polygon(p.coordenadas, { color: '#285430', fillColor: '#285430', fillOpacity: 0.2, weight: 2, dashArray: '5,5' })
+                .addTo(polisLayer)
+                .bindPopup(`<b>${p.titulo}</b><br><span style="font-size:11px;color:#285430;font-weight:bold">${p.descricao}</span>`);
+        });
+        if (municipio) {
+            if (poligonos.length) {
+                const allCoords = poligonos.flatMap(p => p.coordenadas);
+                if (allCoords.length) mapRef.fitBounds(allCoords, { padding: [40, 40] });
+            } else if (pontos.length) {
+                const bounds = L.latLngBounds(pontos.map(p => [p.lat, p.lng]));
+                mapRef.fitBounds(bounds, { padding: [60, 60] });
+            }
+        }
+    } catch { /* API offline */ }
+}
+
+function filtrarPorMunicipio(municipio, car) {
+    municipioAtual = municipio;
+    document.getElementById('search-results').classList.add('hidden');
+    document.getElementById('search-input').value = municipio;
+
+    document.getElementById('location-text').textContent = `${municipio} | Varredura Ativa`;
+
+    const badge = document.getElementById('filter-badge');
+    document.getElementById('filter-badge-text').textContent = municipio;
+    badge.classList.remove('hidden');
+    badge.classList.add('flex');
+    lucide.createIcons();
+
+    carregarKPIs(municipio);
+    carregarAlertas(municipio);
+    carregarMapa(municipio);
+}
+
+function limparFiltro() {
+    municipioAtual = null;
+    document.getElementById('search-input').value = '';
+    document.getElementById('location-text').textContent = 'Estado do Tocantins | Varredura Ativa';
+
+    const badge = document.getElementById('filter-badge');
+    badge.classList.add('hidden');
+    badge.classList.remove('flex');
+
+    if (mapRef) mapRef.setView([-10.1833, -48.3333], 6);
+
+    carregarKPIs();
+    carregarAlertas();
+    carregarMapa();
+}
+
 document.getElementById('search-input').addEventListener('input', e => {
     clearTimeout(searchTimer);
     const q = e.target.value.trim();
@@ -92,11 +169,15 @@ document.getElementById('search-input').addEventListener('input', e => {
             const data = await res.json();
             if (!data.length) { results.classList.add('hidden'); return; }
             results.innerHTML = data.map(p => `
-                <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm" onclick="location.href='produtores.html'">
+                <div class="px-4 py-3 hover:bg-gray-50 cursor-pointer border-b border-gray-100 last:border-0 text-sm search-result-item"
+                     data-municipio="${p.municipio}" data-car="${p.numero_car}">
                     <p class="font-bold text-gray-800">${p.municipio} <span class="text-[10px] font-normal text-gray-400 ml-1">${p.porte === 'G' ? 'Grande' : p.porte === 'M' ? 'Médio' : 'Pequeno'} Porte</span></p>
                     <p class="text-[10px] font-mono text-gray-500 mt-0.5">${p.numero_car}</p>
                 </div>`).join('');
             results.classList.remove('hidden');
+            results.querySelectorAll('.search-result-item').forEach(item => {
+                item.addEventListener('click', () => filtrarPorMunicipio(item.dataset.municipio, item.dataset.car));
+            });
         } catch { results.classList.add('hidden'); }
     }, 350);
 });
@@ -116,29 +197,14 @@ const DRONE_ICON = L.divIcon({ className: '', iconSize: [24,24], iconAnchor: [12
 document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
 
-    const map = L.map('map', { zoomControl: false }).setView([-10.1833, -48.3333], 6);
-    L.control.zoom({ position: 'bottomright' }).addTo(map);
+    mapRef = L.map('map', { zoomControl: false }).setView([-10.1833, -48.3333], 6);
+    L.control.zoom({ position: 'bottomright' }).addTo(mapRef);
     L.tileLayer('https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png', {
         attribution: '&copy; OpenStreetMap &copy; CARTO', subdomains: 'abcd', maxZoom: 20
-    }).addTo(map);
+    }).addTo(mapRef);
 
-    try {
-        const [pontos, poligonos] = await Promise.all([
-            fetch(`${API}/mapa/pontos`).then(r => r.json()),
-            fetch(`${API}/mapa/poligonos`).then(r => r.json()),
-        ]);
-        pontos.forEach(p => {
-            const icon = p.tipo === 'foco_incendio' ? FIRE_ICON : DRONE_ICON;
-            L.marker([p.lat, p.lng], { icon })
-                .addTo(map)
-                .bindPopup(`<b>${p.titulo}</b><br><span style="font-size:11px;color:#555">${p.descricao}</span>`);
-        });
-        poligonos.forEach(p => {
-            L.polygon(p.coordenadas, { color: '#285430', fillColor: '#285430', fillOpacity: 0.2, weight: 2, dashArray: '5,5' })
-                .addTo(map)
-                .bindPopup(`<b>${p.titulo}</b><br><span style="font-size:11px;color:#285430;font-weight:bold">${p.descricao}</span>`);
-        });
-    } catch { /* API offline */ }
+    markersLayer = L.layerGroup().addTo(mapRef);
+    polisLayer = L.layerGroup().addTo(mapRef);
 
-    await Promise.all([carregarKPIs(), carregarAlertas(), carregarNotificacoes()]);
+    await Promise.all([carregarKPIs(), carregarAlertas(), carregarNotificacoes(), carregarMapa()]);
 });

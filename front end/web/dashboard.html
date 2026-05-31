@@ -112,7 +112,7 @@
             <div>
                 <h2 class="font-display font-extrabold text-2xl text-gray-900">Painel de Inteligência</h2>
                 <p class="text-xs text-gray-500 font-medium flex items-center gap-1">
-                    <i data-lucide="map-pin" class="w-3 h-3 text-brand-river"></i> Estado do Tocantins | Varredura Ativa
+                    <i data-lucide="map-pin" class="w-3 h-3 text-brand-river"></i> <span id="location-text">Estado do Tocantins | Varredura Ativa</span>
                 </p>
             </div>
             
@@ -121,6 +121,13 @@
                     <i data-lucide="search" class="w-4 h-4 text-gray-400 absolute left-3 top-1/2 transform -translate-y-1/2"></i>
                     <input id="search-input" type="text" placeholder="Buscar Nº CAR ou Município..." class="pl-9 pr-4 py-2 bg-white border border-gray-200 rounded-lg text-sm focus:outline-none focus:border-brand-river focus:ring-1 focus:ring-brand-river w-64 shadow-sm" autocomplete="off">
                     <div id="search-results" class="hidden absolute top-full mt-1 left-0 w-full bg-white border border-gray-200 rounded-lg shadow-lg z-50 overflow-hidden"></div>
+                </div>
+                <div id="filter-badge" class="hidden items-center gap-2 bg-brand-cerrado/10 text-brand-cerrado text-xs font-bold px-3 py-1.5 rounded-lg border border-brand-cerrado/20">
+                    <i data-lucide="map-pin" class="w-3 h-3"></i>
+                    <span id="filter-badge-text"></span>
+                    <button onclick="limparFiltro()" class="ml-1 hover:text-brand-fire transition" title="Limpar filtro">
+                        <i data-lucide="x" class="w-3 h-3"></i>
+                    </button>
                 </div>
                 <button class="relative p-2 text-gray-600 hover:text-brand-cerrado hover:bg-white rounded-lg transition">
                     <i data-lucide="bell" class="w-5 h-5"></i>
