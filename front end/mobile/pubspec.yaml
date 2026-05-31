@@ -1,0 +1,41 @@
+name: caninde
+description: Canindé — Plataforma de Inteligência Ambiental do Tocantins
+publish_to: 'none'
+version: 1.0.0+1
+
+environment:
+  sdk: '>=3.0.0 <4.0.0'
+
+dependencies:
+  flutter:
+    sdk: flutter
+  cupertino_icons: ^1.0.6
+
+  # Câmera e imagens
+  camera: ^0.10.5+9
+  image_picker: ^1.1.2
+
+  # Geolocalização e EXIF
+  geolocator: ^11.0.0
+  exif: ^3.3.0
+
+  # HTTP e estado
+  http: ^1.2.1
+  provider: ^6.1.2
+
+  # Permissões
+  permission_handler: ^11.3.1
+
+  # UI
+  flutter_svg: ^2.0.10+1
+  cached_network_image: ^3.3.1
+
+dev_dependencies:
+  flutter_test:
+    sdk: flutter
+  flutter_lints: ^3.0.0
+
+flutter:
+  uses-material-design: true
+  assets:
+    - assets/images/
