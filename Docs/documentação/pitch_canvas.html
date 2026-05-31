@@ -1,0 +1,496 @@
+<!DOCTYPE html>
+<html lang="pt-BR"><head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Pitch Canvas - Projeto Canindé</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        /* Estilos universais para elementos editáveis via Frontend */
+        .editable {
+            outline: none;
+            transition: all 0.2s ease-in-out;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            padding: 2px 4px;
+            margin: -2px -4px;
+            display: inline-block;
+            min-width: 20px;
+        }
+        
+        /* Comportamento de Hover e Focus para textos em fundos claros */
+        .editable:hover {
+            background-color: rgba(59, 130, 246, 0.1);
+            border-color: rgba(59, 130, 246, 0.3);
+            cursor: text;
+        }
+        .editable:focus {
+            background-color: #ffffff;
+            border-color: #3b82f6;
+            box-shadow: 0 0 0 2px rgba(59, 130, 246, 0.2);
+            color: #1f2937;
+        }
+
+        /* Comportamento de Hover e Focus EXCLUSIVO para textos em fundos ESCUROS */
+        .editable-dark-bg {
+            outline: none;
+            transition: all 0.2s ease-in-out;
+            border-radius: 4px;
+            border: 1px solid transparent;
+            padding: 2px 4px;
+            margin: -2px -4px;
+            display: inline-block;
+        }
+        .editable-dark-bg:hover {
+            background-color: rgba(255, 255, 255, 0.2);
+            cursor: text;
+        }
+        .editable-dark-bg:focus {
+            background-color: rgba(255, 255, 255, 0.1);
+            border-color: #ffffff;
+            box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.5);
+            color: #ffffff !important;
+        }
+
+        /* Regras estritas para impressão em PDF perfeita (A4 Paisagem) */
+        @media print {
+            @page {
+                size: A4 landscape;
+                margin: 5mm; 
+            }
+            body {
+                -webkit-print-color-adjust: exact !important;
+                print-color-adjust: exact !important;
+                background-color: white !important;
+                font-size: 11px !important; 
+                color: #000 !important; /* Força cor do texto para preto/escuro na impressão */
+            }
+            .no-print {
+                display: none !important;
+            }
+            #canvas-container {
+                box-shadow: none !important;
+                border: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+                width: 100% !important;
+                max-width: 100% !important;
+            }
+            .canvas-block {
+                padding: 0.5rem !important;
+                gap: 0.25rem !important;
+                break-inside: avoid;
+            }
+            .editable, .editable-dark-bg {
+                border: none !important;
+                background: transparent !important;
+                box-shadow: none !important;
+                padding: 0 !important;
+                margin: 0 !important;
+            }
+            
+            /* Força visibilidade das badges da timeline na impressão */
+            .timeline-badge {
+                color: #1f2937 !important; 
+                border-color: #d1d5db !important; 
+                background-color: #f3f4f6 !important; 
+            }
+            .timeline-badge-active {
+                 color: #1e3a8a !important; 
+                 border-color: #3b82f6 !important; 
+                 background-color: #eff6ff !important; 
+            }
+        }
+        
+        body {
+            font-family: 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+            background-color: #f3f4f6;
+            color: #1f2937;
+        }
+        .canvas-block {
+            background-color: white;
+            border: 2px solid #e5e7eb;
+            border-radius: 0.5rem;
+            padding: 1rem;
+            display: flex;
+            flex-direction: column;
+            gap: 0.5rem;
+            height: 100%;
+        }
+        .block-title {
+            font-weight: 800;
+            text-transform: uppercase;
+            font-size: 1.1rem;
+            border-bottom: 2px solid #1f2937;
+            padding-bottom: 0.25rem;
+            margin-bottom: 0.5rem;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+        .block-number {
+            background-color: #1f2937;
+            color: white;
+            padding: 0.1rem 0.4rem;
+            border-radius: 0.25rem;
+            font-size: 0.9rem;
+        }
+        
+        /* Ajuste do tamanho dos ícones do Lucide via classe pai */
+        .icon-container svg {
+            width: 18px;
+            height: 18px;
+            stroke-width: 2.5;
+        }
+        .timeline-icon svg {
+             width: 14px;
+             height: 14px;
+             stroke-width: 2;
+        }
+    </style>
+<style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.right-4{right:1rem}.top-4{top:1rem}.z-50{z-index:50}.mx-1{margin-left:0.25rem;margin-right:0.25rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.h-4{height:1rem}.h-5{height:1.25rem}.h-8{height:2rem}.h-full{height:100%}.w-4{width:1rem}.w-5{width:1.25rem}.w-8{width:2rem}.w-full{width:100%}.min-w-\[100px\]{min-width:100px}.min-w-\[150px\]{min-width:150px}.min-w-\[30px\]{min-width:30px}.min-w-\[40px\]{min-width:40px}.min-w-\[75px\]{min-width:75px}.min-w-\[80px\]{min-width:80px}.max-w-\[1500px\]{max-width:1500px}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.overflow-x-auto{overflow-x:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-b-4{border-bottom-width:4px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253 / var(--tw-border-opacity, 1))}.border-blue-900{--tw-border-opacity:1;border-color:rgb(30 58 138 / var(--tw-border-opacity, 1))}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.border-gray-400{--tw-border-opacity:1;border-color:rgb(156 163 175 / var(--tw-border-opacity, 1))}.border-gray-800{--tw-border-opacity:1;border-color:rgb(31 41 55 / var(--tw-border-opacity, 1))}.border-green-300{--tw-border-opacity:1;border-color:rgb(134 239 172 / var(--tw-border-opacity, 1))}.border-green-900{--tw-border-opacity:1;border-color:rgb(20 83 45 / var(--tw-border-opacity, 1))}.border-transparent{border-color:transparent}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.bg-blue-900{--tw-bg-opacity:1;background-color:rgb(30 58 138 / var(--tw-bg-opacity, 1))}.bg-green-50{--tw-bg-opacity:1;background-color:rgb(240 253 244 / var(--tw-bg-opacity, 1))}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74 / var(--tw-bg-opacity, 1))}.bg-green-900{--tw-bg-opacity:1;background-color:rgb(20 83 45 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.p-2{padding:0.5rem}.p-4{padding:1rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.pb-1{padding-bottom:0.25rem}.pb-2{padding-bottom:0.5rem}.pt-3{padding-top:0.75rem}.text-center{text-align:center}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[9px\]{font-size:9px}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-0.025em}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.text-blue-900{--tw-text-opacity:1;color:rgb(30 58 138 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-green-700{--tw-text-opacity:1;color:rgb(21 128 61 / var(--tw-text-opacity, 1))}.text-green-900{--tw-text-opacity:1;color:rgb(20 83 45 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.hover\:border-blue-400:hover{--tw-border-opacity:1;border-color:rgb(96 165 250 / var(--tw-border-opacity, 1))}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216 / var(--tw-bg-opacity, 1))}.hover\:bg-green-700:hover{--tw-bg-opacity:1;background-color:rgb(21 128 61 / var(--tw-bg-opacity, 1))}@media (min-width: 640px){.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 768px){.md\:flex{display:flex}.md\:w-auto{width:auto}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}.md\:items-end{align-items:flex-end}.md\:justify-center{justify-content:center}.md\:gap-2{gap:0.5rem}.md\:gap-4{gap:1rem}.md\:p-6{padding:1.5rem}.md\:pb-4{padding-bottom:1rem}.md\:text-3xl{font-size:1.875rem;line-height:2.25rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}}@media (min-width: 1024px){.lg\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.lg\:justify-end{justify-content:flex-end}}@media print{.print\:hidden{display:none}.print\:h-10{height:2.5rem}.print\:w-10{width:2.5rem}.print\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.print\:gap-2{gap:0.5rem}.print\:border-none{border-style:none}.print\:p-0{padding:0px}.print\:text-\[10px\]{font-size:10px}.print\:text-\[11px\]{font-size:11px}}</style><style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.right-4{right:1rem}.top-4{top:1rem}.z-50{z-index:50}.mx-1{margin-left:0.25rem;margin-right:0.25rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.h-4{height:1rem}.h-5{height:1.25rem}.h-8{height:2rem}.h-full{height:100%}.w-4{width:1rem}.w-5{width:1.25rem}.w-8{width:2rem}.w-full{width:100%}.min-w-\[100px\]{min-width:100px}.min-w-\[150px\]{min-width:150px}.min-w-\[30px\]{min-width:30px}.min-w-\[40px\]{min-width:40px}.min-w-\[75px\]{min-width:75px}.min-w-\[80px\]{min-width:80px}.max-w-\[1500px\]{max-width:1500px}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.overflow-x-auto{overflow-x:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-b-4{border-bottom-width:4px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253 / var(--tw-border-opacity, 1))}.border-blue-900{--tw-border-opacity:1;border-color:rgb(30 58 138 / var(--tw-border-opacity, 1))}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.border-gray-400{--tw-border-opacity:1;border-color:rgb(156 163 175 / var(--tw-border-opacity, 1))}.border-gray-800{--tw-border-opacity:1;border-color:rgb(31 41 55 / var(--tw-border-opacity, 1))}.border-green-300{--tw-border-opacity:1;border-color:rgb(134 239 172 / var(--tw-border-opacity, 1))}.border-green-900{--tw-border-opacity:1;border-color:rgb(20 83 45 / var(--tw-border-opacity, 1))}.border-transparent{border-color:transparent}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.bg-blue-900{--tw-bg-opacity:1;background-color:rgb(30 58 138 / var(--tw-bg-opacity, 1))}.bg-green-50{--tw-bg-opacity:1;background-color:rgb(240 253 244 / var(--tw-bg-opacity, 1))}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74 / var(--tw-bg-opacity, 1))}.bg-green-900{--tw-bg-opacity:1;background-color:rgb(20 83 45 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.p-2{padding:0.5rem}.p-4{padding:1rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.pb-1{padding-bottom:0.25rem}.pb-2{padding-bottom:0.5rem}.pt-3{padding-top:0.75rem}.text-center{text-align:center}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[9px\]{font-size:9px}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-0.025em}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.text-blue-900{--tw-text-opacity:1;color:rgb(30 58 138 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-green-700{--tw-text-opacity:1;color:rgb(21 128 61 / var(--tw-text-opacity, 1))}.text-green-900{--tw-text-opacity:1;color:rgb(20 83 45 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.hover\:border-blue-400:hover{--tw-border-opacity:1;border-color:rgb(96 165 250 / var(--tw-border-opacity, 1))}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216 / var(--tw-bg-opacity, 1))}.hover\:bg-green-700:hover{--tw-bg-opacity:1;background-color:rgb(21 128 61 / var(--tw-bg-opacity, 1))}@media (min-width: 640px){.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 768px){.md\:flex{display:flex}.md\:w-auto{width:auto}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}.md\:items-end{align-items:flex-end}.md\:justify-center{justify-content:center}.md\:gap-2{gap:0.5rem}.md\:gap-4{gap:1rem}.md\:p-6{padding:1.5rem}.md\:pb-4{padding-bottom:1rem}.md\:text-3xl{font-size:1.875rem;line-height:2.25rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}}@media (min-width: 1024px){.lg\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.lg\:justify-end{justify-content:flex-end}}@media print{.print\:hidden{display:none}.print\:h-10{height:2.5rem}.print\:w-10{width:2.5rem}.print\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.print\:gap-2{gap:0.5rem}.print\:border-none{border-style:none}.print\:p-0{padding:0px}.print\:text-\[10px\]{font-size:10px}.print\:text-\[11px\]{font-size:11px}}</style><style>*, ::before, ::after{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }::backdrop{--tw-border-spacing-x:0;--tw-border-spacing-y:0;--tw-translate-x:0;--tw-translate-y:0;--tw-rotate:0;--tw-skew-x:0;--tw-skew-y:0;--tw-scale-x:1;--tw-scale-y:1;--tw-pan-x: ;--tw-pan-y: ;--tw-pinch-zoom: ;--tw-scroll-snap-strictness:proximity;--tw-gradient-from-position: ;--tw-gradient-via-position: ;--tw-gradient-to-position: ;--tw-ordinal: ;--tw-slashed-zero: ;--tw-numeric-figure: ;--tw-numeric-spacing: ;--tw-numeric-fraction: ;--tw-ring-inset: ;--tw-ring-offset-width:0px;--tw-ring-offset-color:#fff;--tw-ring-color:rgb(59 130 246 / 0.5);--tw-ring-offset-shadow:0 0 #0000;--tw-ring-shadow:0 0 #0000;--tw-shadow:0 0 #0000;--tw-shadow-colored:0 0 #0000;--tw-blur: ;--tw-brightness: ;--tw-contrast: ;--tw-grayscale: ;--tw-hue-rotate: ;--tw-invert: ;--tw-saturate: ;--tw-sepia: ;--tw-drop-shadow: ;--tw-backdrop-blur: ;--tw-backdrop-brightness: ;--tw-backdrop-contrast: ;--tw-backdrop-grayscale: ;--tw-backdrop-hue-rotate: ;--tw-backdrop-invert: ;--tw-backdrop-opacity: ;--tw-backdrop-saturate: ;--tw-backdrop-sepia: ;--tw-contain-size: ;--tw-contain-layout: ;--tw-contain-paint: ;--tw-contain-style: }/* ! tailwindcss v3.4.17 | MIT License | https://tailwindcss.com */*,::after,::before{box-sizing:border-box;border-width:0;border-style:solid;border-color:#e5e7eb}::after,::before{--tw-content:''}:host,html{line-height:1.5;-webkit-text-size-adjust:100%;-moz-tab-size:4;tab-size:4;font-family:ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol", "Noto Color Emoji";font-feature-settings:normal;font-variation-settings:normal;-webkit-tap-highlight-color:transparent}body{margin:0;line-height:inherit}hr{height:0;color:inherit;border-top-width:1px}abbr:where([title]){-webkit-text-decoration:underline dotted;text-decoration:underline dotted}h1,h2,h3,h4,h5,h6{font-size:inherit;font-weight:inherit}a{color:inherit;text-decoration:inherit}b,strong{font-weight:bolder}code,kbd,pre,samp{font-family:ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;font-feature-settings:normal;font-variation-settings:normal;font-size:1em}small{font-size:80%}sub,sup{font-size:75%;line-height:0;position:relative;vertical-align:baseline}sub{bottom:-.25em}sup{top:-.5em}table{text-indent:0;border-color:inherit;border-collapse:collapse}button,input,optgroup,select,textarea{font-family:inherit;font-feature-settings:inherit;font-variation-settings:inherit;font-size:100%;font-weight:inherit;line-height:inherit;letter-spacing:inherit;color:inherit;margin:0;padding:0}button,select{text-transform:none}button,input:where([type=button]),input:where([type=reset]),input:where([type=submit]){-webkit-appearance:button;background-color:transparent;background-image:none}:-moz-focusring{outline:auto}:-moz-ui-invalid{box-shadow:none}progress{vertical-align:baseline}::-webkit-inner-spin-button,::-webkit-outer-spin-button{height:auto}[type=search]{-webkit-appearance:textfield;outline-offset:-2px}::-webkit-search-decoration{-webkit-appearance:none}::-webkit-file-upload-button{-webkit-appearance:button;font:inherit}summary{display:list-item}blockquote,dd,dl,figure,h1,h2,h3,h4,h5,h6,hr,p,pre{margin:0}fieldset{margin:0;padding:0}legend{padding:0}menu,ol,ul{list-style:none;margin:0;padding:0}dialog{padding:0}textarea{resize:vertical}input::placeholder,textarea::placeholder{opacity:1;color:#9ca3af}[role=button],button{cursor:pointer}:disabled{cursor:default}audio,canvas,embed,iframe,img,object,svg,video{display:block;vertical-align:middle}img,video{max-width:100%;height:auto}[hidden]:where(:not([hidden=until-found])){display:none}.fixed{position:fixed}.right-4{right:1rem}.top-4{top:1rem}.z-50{z-index:50}.mx-1{margin-left:0.25rem;margin-right:0.25rem}.mx-auto{margin-left:auto;margin-right:auto}.mb-1{margin-bottom:0.25rem}.mb-2{margin-bottom:0.5rem}.mb-4{margin-bottom:1rem}.mt-1{margin-top:0.25rem}.mt-2{margin-top:0.5rem}.block{display:block}.inline-block{display:inline-block}.flex{display:flex}.grid{display:grid}.h-4{height:1rem}.h-5{height:1.25rem}.h-8{height:2rem}.h-full{height:100%}.w-4{width:1rem}.w-5{width:1.25rem}.w-8{width:2rem}.w-full{width:100%}.min-w-\[100px\]{min-width:100px}.min-w-\[150px\]{min-width:150px}.min-w-\[30px\]{min-width:30px}.min-w-\[40px\]{min-width:40px}.min-w-\[75px\]{min-width:75px}.min-w-\[80px\]{min-width:80px}.max-w-\[1500px\]{max-width:1500px}.flex-1{flex:1 1 0%}.flex-shrink-0{flex-shrink:0}.cursor-pointer{cursor:pointer}.grid-cols-1{grid-template-columns:repeat(1, minmax(0, 1fr))}.grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.flex-col{flex-direction:column}.items-start{align-items:flex-start}.items-end{align-items:flex-end}.items-center{align-items:center}.justify-center{justify-content:center}.justify-between{justify-content:space-between}.gap-1{gap:0.25rem}.gap-2{gap:0.5rem}.gap-3{gap:0.75rem}.gap-4{gap:1rem}.overflow-x-auto{overflow-x:auto}.whitespace-nowrap{white-space:nowrap}.rounded{border-radius:0.25rem}.rounded-full{border-radius:9999px}.rounded-lg{border-radius:0.5rem}.border{border-width:1px}.border-2{border-width:2px}.border-b{border-bottom-width:1px}.border-b-4{border-bottom-width:4px}.border-t{border-top-width:1px}.border-dashed{border-style:dashed}.border-blue-200{--tw-border-opacity:1;border-color:rgb(191 219 254 / var(--tw-border-opacity, 1))}.border-blue-300{--tw-border-opacity:1;border-color:rgb(147 197 253 / var(--tw-border-opacity, 1))}.border-blue-900{--tw-border-opacity:1;border-color:rgb(30 58 138 / var(--tw-border-opacity, 1))}.border-gray-100{--tw-border-opacity:1;border-color:rgb(243 244 246 / var(--tw-border-opacity, 1))}.border-gray-200{--tw-border-opacity:1;border-color:rgb(229 231 235 / var(--tw-border-opacity, 1))}.border-gray-300{--tw-border-opacity:1;border-color:rgb(209 213 219 / var(--tw-border-opacity, 1))}.border-gray-400{--tw-border-opacity:1;border-color:rgb(156 163 175 / var(--tw-border-opacity, 1))}.border-gray-800{--tw-border-opacity:1;border-color:rgb(31 41 55 / var(--tw-border-opacity, 1))}.border-green-300{--tw-border-opacity:1;border-color:rgb(134 239 172 / var(--tw-border-opacity, 1))}.border-green-900{--tw-border-opacity:1;border-color:rgb(20 83 45 / var(--tw-border-opacity, 1))}.border-transparent{border-color:transparent}.bg-blue-100{--tw-bg-opacity:1;background-color:rgb(219 234 254 / var(--tw-bg-opacity, 1))}.bg-blue-50{--tw-bg-opacity:1;background-color:rgb(239 246 255 / var(--tw-bg-opacity, 1))}.bg-blue-600{--tw-bg-opacity:1;background-color:rgb(37 99 235 / var(--tw-bg-opacity, 1))}.bg-blue-900{--tw-bg-opacity:1;background-color:rgb(30 58 138 / var(--tw-bg-opacity, 1))}.bg-green-50{--tw-bg-opacity:1;background-color:rgb(240 253 244 / var(--tw-bg-opacity, 1))}.bg-green-600{--tw-bg-opacity:1;background-color:rgb(22 163 74 / var(--tw-bg-opacity, 1))}.bg-green-900{--tw-bg-opacity:1;background-color:rgb(20 83 45 / var(--tw-bg-opacity, 1))}.bg-white{--tw-bg-opacity:1;background-color:rgb(255 255 255 / var(--tw-bg-opacity, 1))}.p-2{padding:0.5rem}.p-4{padding:1rem}.px-2{padding-left:0.5rem;padding-right:0.5rem}.px-3{padding-left:0.75rem;padding-right:0.75rem}.px-4{padding-left:1rem;padding-right:1rem}.py-1{padding-top:0.25rem;padding-bottom:0.25rem}.py-1\.5{padding-top:0.375rem;padding-bottom:0.375rem}.py-2{padding-top:0.5rem;padding-bottom:0.5rem}.pb-1{padding-bottom:0.25rem}.pb-2{padding-bottom:0.5rem}.pt-3{padding-top:0.75rem}.text-center{text-align:center}.text-2xl{font-size:1.5rem;line-height:2rem}.text-\[9px\]{font-size:9px}.text-sm{font-size:0.875rem;line-height:1.25rem}.text-xs{font-size:0.75rem;line-height:1rem}.font-black{font-weight:900}.font-bold{font-weight:700}.font-medium{font-weight:500}.font-semibold{font-weight:600}.uppercase{text-transform:uppercase}.italic{font-style:italic}.leading-snug{line-height:1.375}.leading-tight{line-height:1.25}.tracking-tight{letter-spacing:-0.025em}.text-blue-700{--tw-text-opacity:1;color:rgb(29 78 216 / var(--tw-text-opacity, 1))}.text-blue-800{--tw-text-opacity:1;color:rgb(30 64 175 / var(--tw-text-opacity, 1))}.text-blue-900{--tw-text-opacity:1;color:rgb(30 58 138 / var(--tw-text-opacity, 1))}.text-gray-300{--tw-text-opacity:1;color:rgb(209 213 219 / var(--tw-text-opacity, 1))}.text-gray-400{--tw-text-opacity:1;color:rgb(156 163 175 / var(--tw-text-opacity, 1))}.text-gray-500{--tw-text-opacity:1;color:rgb(107 114 128 / var(--tw-text-opacity, 1))}.text-gray-600{--tw-text-opacity:1;color:rgb(75 85 99 / var(--tw-text-opacity, 1))}.text-gray-700{--tw-text-opacity:1;color:rgb(55 65 81 / var(--tw-text-opacity, 1))}.text-gray-800{--tw-text-opacity:1;color:rgb(31 41 55 / var(--tw-text-opacity, 1))}.text-gray-900{--tw-text-opacity:1;color:rgb(17 24 39 / var(--tw-text-opacity, 1))}.text-green-600{--tw-text-opacity:1;color:rgb(22 163 74 / var(--tw-text-opacity, 1))}.text-green-700{--tw-text-opacity:1;color:rgb(21 128 61 / var(--tw-text-opacity, 1))}.text-green-900{--tw-text-opacity:1;color:rgb(20 83 45 / var(--tw-text-opacity, 1))}.text-white{--tw-text-opacity:1;color:rgb(255 255 255 / var(--tw-text-opacity, 1))}.shadow-lg{--tw-shadow:0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 10px 15px -3px var(--tw-shadow-color), 0 4px 6px -4px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-sm{--tw-shadow:0 1px 2px 0 rgb(0 0 0 / 0.05);--tw-shadow-colored:0 1px 2px 0 var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.shadow-xl{--tw-shadow:0 20px 25px -5px rgb(0 0 0 / 0.1), 0 8px 10px -6px rgb(0 0 0 / 0.1);--tw-shadow-colored:0 20px 25px -5px var(--tw-shadow-color), 0 8px 10px -6px var(--tw-shadow-color);box-shadow:var(--tw-ring-offset-shadow, 0 0 #0000), var(--tw-ring-shadow, 0 0 #0000), var(--tw-shadow)}.transition{transition-property:color, background-color, border-color, fill, stroke, opacity, box-shadow, transform, filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, opacity, box-shadow, transform, filter, backdrop-filter, -webkit-text-decoration-color, -webkit-backdrop-filter;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.transition-colors{transition-property:color, background-color, border-color, fill, stroke, -webkit-text-decoration-color;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke;transition-property:color, background-color, border-color, text-decoration-color, fill, stroke, -webkit-text-decoration-color;transition-timing-function:cubic-bezier(0.4, 0, 0.2, 1);transition-duration:150ms}.duration-200{transition-duration:200ms}.hover\:border-blue-400:hover{--tw-border-opacity:1;border-color:rgb(96 165 250 / var(--tw-border-opacity, 1))}.hover\:bg-blue-700:hover{--tw-bg-opacity:1;background-color:rgb(29 78 216 / var(--tw-bg-opacity, 1))}.hover\:bg-green-700:hover{--tw-bg-opacity:1;background-color:rgb(21 128 61 / var(--tw-bg-opacity, 1))}@media (min-width: 640px){.sm\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}}@media (min-width: 768px){.md\:flex{display:flex}.md\:w-auto{width:auto}.md\:grid-cols-2{grid-template-columns:repeat(2, minmax(0, 1fr))}.md\:grid-cols-3{grid-template-columns:repeat(3, minmax(0, 1fr))}.md\:flex-row{flex-direction:row}.md\:items-end{align-items:flex-end}.md\:justify-center{justify-content:center}.md\:gap-2{gap:0.5rem}.md\:gap-4{gap:1rem}.md\:p-6{padding:1.5rem}.md\:pb-4{padding-bottom:1rem}.md\:text-3xl{font-size:1.875rem;line-height:2.25rem}.md\:text-sm{font-size:0.875rem;line-height:1.25rem}}@media (min-width: 1024px){.lg\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.lg\:justify-end{justify-content:flex-end}}@media print{.print\:hidden{display:none}.print\:h-10{height:2.5rem}.print\:w-10{width:2.5rem}.print\:grid-cols-5{grid-template-columns:repeat(5, minmax(0, 1fr))}.print\:gap-2{gap:0.5rem}.print\:border-none{border-style:none}.print\:p-0{padding:0px}.print\:text-\[10px\]{font-size:10px}.print\:text-\[11px\]{font-size:11px}}</style></head>
+<body class="p-2 md:p-6 print:p-0">
+
+    <!-- Botões de Ação (Não aparecem no PDF) -->
+    <div class="no-print fixed top-4 right-4 flex gap-2 z-50">
+        <button onclick="downloadHTML()" class="bg-green-600 hover:bg-green-700 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center gap-2 transition duration-200" title="Salva uma cópia exata para continuar editando depois">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="download" aria-hidden="true" class="lucide lucide-download w-5 h-5"><path d="M12 15V3"></path><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"></path><path d="m7 10 5 5 5-5"></path></svg>
+            Salvar HTML
+        </button>
+        <button onclick="window.print()" class="bg-blue-600 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded shadow-lg flex items-center gap-2 transition duration-200">
+            <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="printer" aria-hidden="true" class="lucide lucide-printer w-5 h-5"><path d="M6 18H4a2 2 0 0 1-2-2v-5a2 2 0 0 1 2-2h16a2 2 0 0 1 2 2v5a2 2 0 0 1-2 2h-2"></path><path d="M6 9V3a1 1 0 0 1 1-1h10a1 1 0 0 1 1 1v6"></path><rect x="6" y="14" width="12" height="8" rx="1"></rect></svg>
+            Gerar PDF (A4)
+        </button>
+    </div>
+
+    <!-- Container Principal do Canvas -->
+    <div class="w-full max-w-[1500px] mx-auto bg-white p-4 md:p-6 shadow-xl border border-gray-200" id="canvas-container">
+        
+        <!-- Cabeçalho 100% Editável COM LOGO -->
+        <header class="flex flex-col md:flex-row justify-between items-start md:items-end border-b-4 border-gray-800 pb-2 md:pb-4 mb-4 gap-4">
+            
+            <!-- Títulos -->
+            <div class="flex-shrink-0">
+                <h1 contenteditable="true" class="editable text-2xl md:text-3xl font-black text-gray-800 tracking-tight block">PITCH CANVAS</h1>
+                <p contenteditable="true" class="editable text-xs md:text-sm text-gray-500 font-semibold uppercase block mt-1">by Fernando Seabra</p>
+            </div>
+            
+            <!-- Metadados -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:flex md:flex-row gap-2 md:gap-4 text-sm font-medium w-full md:w-auto flex-1 md:justify-center lg:justify-end items-end pb-1">
+                <div class="flex items-center gap-1"><span contenteditable="true" class="editable text-gray-500">Equipe:</span> <div contenteditable="true" class="editable font-bold border-b border-dashed border-gray-400 min-w-[100px]">WB Projects Design &amp; Dev</div></div>
+                <div class="flex items-center gap-1"><span contenteditable="true" class="editable text-gray-500">Projeto:</span> <div contenteditable="true" class="editable font-bold border-b border-dashed border-gray-400 min-w-[150px]">Guardião do Cerrado</div></div>
+                <div class="flex items-center gap-1"><span contenteditable="true" class="editable text-gray-500">Data:</span> <div contenteditable="true" class="editable font-bold border-b border-dashed border-gray-400 min-w-[75px]">30/05/2026</div></div>
+                <div class="flex items-center gap-1"><span contenteditable="true" class="editable text-gray-500">V:</span> <div contenteditable="true" class="editable font-bold border-b border-dashed border-gray-400 min-w-[40px]">1.0</div></div>
+            </div>
+
+            <!-- Box da Logo (Fica limpo no PDF, tracejado na tela) -->
+            <div class="flex-shrink-0 flex flex-col items-center justify-center border-2 border-dashed border-gray-300 rounded-lg p-2 min-w-[80px] text-gray-400 hover:border-blue-400 transition-colors print:border-none print:p-0">
+                <!-- Substitua o <i> abaixo pela sua tag <img> -->
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="leaf" aria-hidden="true" class="lucide lucide-leaf w-8 h-8 text-green-600 print:w-10 print:h-10"><path d="M11 20A7 7 0 0 1 9.8 6.1C15.5 5 17 4.48 19 2c1 2 2 4.18 2 8 0 5.5-4.78 10-10 10Z"></path><path d="M2 21c0-3 1.85-5.36 5.08-6C9.5 14.52 12 13 13 12"></path></svg>
+                <span class="text-[9px] font-bold mt-1 uppercase text-gray-400 print:hidden text-center leading-tight">Sua Logo<br>(Substitua no HTML)</span>
+            </div>
+            
+        </header>
+
+        <!-- Main Grid (Upper Section) -->
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 print:grid-cols-5 gap-4 print:gap-2 mb-4">
+            
+            <!-- 01 DOR -->
+            <div class="canvas-block">
+                <h2 class="block-title">
+                    <span class="block-number"><span contenteditable="true" class="editable-dark-bg">01</span></span>
+                    <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="target" aria-hidden="true" class="lucide lucide-target text-gray-800"><circle cx="12" cy="12" r="10"></circle><circle cx="12" cy="12" r="6"></circle><circle cx="12" cy="12" r="2"></circle></svg></span>
+                    <span contenteditable="true" class="editable">DOR</span>
+                </h2>
+                <div class="text-sm print:text-[11px] h-full flex flex-col gap-2">
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block mb-1">Conheço a dor pois:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug w-full block">
+                            O Tocantins possui 91% de seu território no Cerrado, sofrendo forte pressão da fronteira agrícola, que visa o aumento de áreas para a produção agrícola, além disso anualmente á grandes focos de incêndios em meses quentes o que gera grandes áreas de degradadas quais sem um método eficiente para estar diagnosticando e cuidando se recuperam de modo natural, entretanto árvores do cerrado tem crescimento muito lento, sendo assim, demoram muito tempo para se desenvolverem, nesse cenário esses locais passam muito tempo sem árvores que além do sequestro de carbono também atuam na proteção do solo.</p><div><br><div><span style="font-size: 0.875rem;">Percebemos que falta um mecanismo integrado para monitorar restauração (PRAD) e atestar a sobrevivência de mudas a longo prazo.</span></div></div><p></p>
+                    </div>
+                    <div>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug w-full block">
+                            O monitoramento atual in loco é extremamente caro, moroso e inviável para cobrir a vastidão do estado, deixando pontos cegos na fiscalização.
+                        </p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 02 AUTORIDADE -->
+            <div class="canvas-block">
+                <h2 class="block-title">
+                    <span class="block-number"><span contenteditable="true" class="editable-dark-bg">02</span></span>
+                    <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="award" aria-hidden="true" class="lucide lucide-award text-gray-800"><path d="m15.477 12.89 1.515 8.526a.5.5 0 0 1-.81.47l-3.58-2.687a1 1 0 0 0-1.197 0l-3.586 2.686a.5.5 0 0 1-.81-.469l1.514-8.526"></path><circle cx="12" cy="8" r="6"></circle></svg></span>
+                    <span contenteditable="true" class="editable">AUTORIDADE</span>
+                </h2>
+                <div class="text-sm print:text-[11px] h-full flex flex-col gap-3">
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block mb-1">Quero você por que:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug w-full block">Ao analisarmos profundamente os desafios do Eixo 2. Entendemos a "dor" do órgão ambiental e como profissionais qualificados descobrimos uma maneira efetiva para resolver este desafio de forma prática.</p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block mb-1">Time que criei:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug w-full block">Equipe multidisciplinar com foco técnico e de negócio:</p><div><br>Ana Karoline / Banco de dados (perfil Tecnologia): conhecimento em FastAPI, Python, Flutter, Dart, Java, javascript, Github, C#, full stack.</div><div><br></div><div><span style="font-size: 0.875rem;">Luiz Fellipe / Banco de dados (perfil Tecnologia): conhecimento em</span><span style="font-size: 0.875rem;">&nbsp;FastAPI, Python, Flutter, Dart, C#, Javascript, Github, full stack.</span></div><div><br><div><div>William Brito / liderança (perfil Design): conhecimento em UX/UI de campo, full stack, Back-end, Front-end.<br></div><div><br></div><div>Arthur Pereira / consultor (perfil negócios): técnico em manutenção automotiva, Excel, Windows e Word.</div><div><br></div><div>Maicon Rodrigues / criatividade (perfil negócios): Engenheiro Agrônomo</div></div></div><p></p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 03 SOLUÇÃO -->
+            <div class="canvas-block bg-blue-50 border-blue-200">
+                <h2 class="block-title text-blue-900 border-blue-900">
+                    <span class="block-number bg-blue-900"><span contenteditable="true" class="editable-dark-bg">03</span></span>
+                    <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="lightbulb" aria-hidden="true" class="lucide lucide-lightbulb text-blue-900"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"></path><path d="M9 18h6"></path><path d="M10 22h4"></path></svg></span>
+                    <span contenteditable="true" class="editable">SOLUÇÃO</span>
+                </h2>
+                <div class="text-sm print:text-[11px] h-full flex flex-col gap-2">
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">O que?</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Ecossistema inteligente de monitoramento ambiental e gestão de reflorestamento ativo.</p><div><br></div><div>O protótipo celeriza a busca por áreas que foram desmatadas ou queimadas, de modo prático, unindo bombeiros e civis, em apoio à semarh, utilizando a geolocalização para facilitar a localização e mensuração do impacto em cada localidade fazendo uso de drones carregados por energia solar, para realizar varreduras em localidades de difícil acesso, além do acompanhamento das plantas estabelecendo metas para o produtor, estabelecendo uma taxa de sobrevivência para conseguir benefícios, como uma forma de incentivo.
+</div><div><br></div><p></p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">Isso é único? (Inovação):</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Sim. Integra "Alerta Cidadão" c/ Bombeiros e drones solares "in a box" para varredura autônoma.</p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">Como?</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Backend geoespacial (PostGIS) cruzando satélite e licenças CAR. App mobile com scanner CV para medir mudas.</p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">Valor Agregado:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Transparência pública e liberação de incentivos via tecnologia.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 04 MERCADO -->
+            <div class="canvas-block">
+                <h2 class="block-title">
+                    <span class="block-number"><span contenteditable="true" class="editable-dark-bg">04</span></span>
+                    <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="bar-chart-3" aria-hidden="true" class="lucide lucide-bar-chart-3 text-gray-800"><path d="M3 3v16a2 2 0 0 0 2 2h16"></path><path d="M18 17V9"></path><path d="M13 17V5"></path><path d="M8 17v-3"></path></svg></span>
+                    <span contenteditable="true" class="editable">MERCADO</span>
+                </h2>
+                <div class="text-sm print:text-[11px] h-full flex flex-col gap-2">
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">Tamanho:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Foco inicial: Estado do Tocantins (SOM), abrangendo propriedades privadas com PRAD ativo e Unidades de Conservação.</p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">Crescimento:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Mercado de restauração aquecido por metas globais ESG e mercado regulado de Carbono.</p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-blue-700 block">Concorrência:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Atualmente, há uma empresa parecida no ramo, a empresa MORFO que utiliza drones para estar realizando a semeadura de árvores tropicais, entretanto, é algo que não é efetivo para o bioma tocantinense, pelo crescimento lento que&nbsp; as árvores do nativas do cerrado possui.</p>
+                    </div>
+                </div>
+            </div>
+
+            <!-- 07 OPORTUNIDADE -->
+            <div class="canvas-block border-green-300 bg-green-50">
+                <h2 class="block-title text-green-900 border-green-900">
+                    <span class="block-number bg-green-900"><span contenteditable="true" class="editable-dark-bg">07</span></span>
+                    <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="rocket" aria-hidden="true" class="lucide lucide-rocket text-green-900"><path d="M12 15v5s3.03-.55 4-2c1.08-1.62 0-5 0-5"></path><path d="M4.5 16.5c-1.5 1.26-2 5-2 5s3.74-.5 5-2c.71-.84.7-2.13-.09-2.91a2.18 2.18 0 0 0-2.91-.09"></path><path d="M9 12a22 22 0 0 1 2-3.95A12.88 12.88 0 0 1 22 2c0 2.72-.78 7.5-6 11a22.4 22.4 0 0 1-4 2z"></path><path d="M9 12H4s.55-3.03 2-4c1.62-1.08 5 .05 5 .05"></path></svg></span>
+                    <span contenteditable="true" class="editable">OPORTUNIDADE</span>
+                </h2>
+                <div class="text-sm print:text-[11px] h-full flex flex-col gap-2">
+                    <div>
+                        <strong contenteditable="true" class="editable text-green-700 block mb-1">Investimento / Call to Action:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full"></p><div>O projeto buscando a viabilidade econômica, calculando implementação, apresenta&nbsp;<span style="font-size: 0.875rem;">o custo de Setup inicial de R$ 75.000, sendo R$ 10.800,00 / mês, totalizando R$ 129.600 / ano para manter o programa em funcionamento.</span></div><div><span style="font-size: 0.875rem;"><br></span></div><div>O valor pode ter um desconto de 10% caso o valor anual for pago antecipadamente, ficando 116.000,00 / ano.</div><div><br></div><div><span style="font-size: 0.875rem;">Buscamos validação técnica em campo e adoção da plataforma pela SEMARH e Naturatins.</span></div><p></p>
+                    </div>
+                    <div>
+                        <strong contenteditable="true" class="editable text-green-700 block mb-1">Vantagem Competitiva:</strong>
+                        <p contenteditable="true" class="editable text-gray-700 leading-snug block w-full">Solução desenhada para a infraestrutura do TO, aderente à legislação e usando símbolos locais (Arara Canindé) e (Parkia platycephala).</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 05 SIM - SISTEMA INTEGRADO DE MONETIZAÇÃO -->
+        <div class="canvas-block mb-4">
+            <h2 class="block-title">
+                <span class="block-number"><span contenteditable="true" class="editable-dark-bg">05</span></span>
+                <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="dollar-sign" aria-hidden="true" class="lucide lucide-dollar-sign text-gray-800"><line x1="12" x2="12" y1="2" y2="22"></line><path d="M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"></path></svg></span>
+                <span contenteditable="true" class="editable w-full">SIM - SISTEMA INTEGRADO DE MONETIZAÇÃO</span>
+            </h2>
+            
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-5 print:grid-cols-5 gap-4 mt-2">
+                
+                <div class="text-xs print:text-[10px]">
+                    <h3 contenteditable="true" class="editable font-bold text-gray-800 border-b border-gray-200 pb-1 mb-2 block w-full">Modelo de Público</h3>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">B2B</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">B2C</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">B2B2C</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">B2C2G</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">B2G</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">G2G</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">B2E</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">D2C</span></div>
+                </div>
+
+                <div class="text-xs print:text-[10px]">
+                    <h3 contenteditable="true" class="editable font-bold text-gray-800 border-b border-gray-200 pb-1 mb-2 block w-full">Modelo de Negócio</h3>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">SaaS</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Marketplace</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">E-Commerce</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Franquias</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">APP</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Produto Físico</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Serviço (Certificação)</span></div>
+                </div>
+
+                <div class="text-xs print:text-[10px]">
+                    <h3 contenteditable="true" class="editable font-bold text-gray-800 border-b border-gray-200 pb-1 mb-2 block w-full">Modelo de Receita</h3>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Vendas One Shot</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Assinatura (Licença Gov)</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Publicidade</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Pay Per Use (Selos)</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Comissões (Crédito Carbono)</span></div>
+                    <div class="mt-2 text-gray-600 italic block w-full" contenteditable="true">
+                        <span class="editable block w-full">* Promove redução de custos do Estado.</span>
+                    </div>
+                </div>
+
+                <div class="text-xs print:text-[10px]">
+                    <h3 contenteditable="true" class="editable font-bold text-gray-800 border-b border-gray-200 pb-1 mb-2 block w-full">Canal de Vendas</h3>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Equipes Próprias</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Representantes (Institucional)</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" checked="checked" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Venda Direta (B2B)</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Dealers</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Atacados</span></div>
+                    <div class="flex items-center gap-1 mb-1"><input type="checkbox" class="cursor-pointer"> <span contenteditable="true" class="editable flex-1">Marketing Digital</span></div>
+                </div>
+
+                <div class="text-xs print:text-[10px]">
+                    <h3 contenteditable="true" class="editable font-bold text-gray-800 border-b border-gray-200 pb-1 mb-2 block w-full">Utilização dos Recursos</h3>
+                    <div class="flex flex-col gap-2">
+                        <p><strong contenteditable="true" class="editable inline-block min-w-[30px]">40%</strong> - <span contenteditable="true" class="editable flex-1">P&amp;D (IA, CV e Drone)</span></p>
+                        <p><strong contenteditable="true" class="editable inline-block min-w-[30px]">30%</strong> - <span contenteditable="true" class="editable flex-1">Infra e Banco (PostGIS)</span></p>
+                        <p><strong contenteditable="true" class="editable inline-block min-w-[30px]">20%</strong> - <span contenteditable="true" class="editable flex-1">Marketing e Adoção B2B</span></p>
+                        <p><strong contenteditable="true" class="editable inline-block min-w-[30px]">10%</strong> - <span contenteditable="true" class="editable flex-1">Operação e Suporte</span></p>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- 06 INSIGHT / FASES -->
+        <div class="canvas-block">
+            <h2 class="block-title">
+                <span class="block-number"><span contenteditable="true" class="editable-dark-bg">06</span></span>
+                <span class="icon-container"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="eye" aria-hidden="true" class="lucide lucide-eye text-gray-800"><path d="M2.062 12.348a1 1 0 0 1 0-.696 10.75 10.75 0 0 1 19.876 0 1 1 0 0 1 0 .696 10.75 10.75 0 0 1-19.876 0"></path><circle cx="12" cy="12" r="3"></circle></svg></span>
+                <span contenteditable="true" class="editable w-full">FASES DA STARTUP / INSIGHT</span>
+            </h2>
+            
+            <!-- Timeline Refinada com Ícones -->
+            <div class="flex justify-between items-center mt-2 w-full px-2 text-xs md:text-sm font-semibold text-gray-500 overflow-x-auto pb-2">
+                
+                <div class="flex items-center gap-1 md:gap-2 whitespace-nowrap timeline-badge px-2 py-1 rounded border border-transparent">
+                    <span class="timeline-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="search" aria-hidden="true" class="lucide lucide-search"><path d="m21 21-4.34-4.34"></path><circle cx="11" cy="11" r="8"></circle></svg></span>
+                    <span contenteditable="true" class="editable">Pesquisas</span>
+                </div>
+                
+                <span class="text-gray-300 mx-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span>
+                
+                <div class="flex items-center gap-1 md:gap-2 whitespace-nowrap timeline-badge px-2 py-1 rounded border border-transparent">
+                    <span class="timeline-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="check-circle-2" aria-hidden="true" class="lucide lucide-check-circle-2"><circle cx="12" cy="12" r="10"></circle><path d="m9 12 2 2 4-4"></path></svg></span>
+                    <span contenteditable="true" class="editable">Validação</span>
+                </div>
+                
+                <span class="text-gray-300 mx-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span>
+                
+                <!-- Badge Ativa (MVP) -->
+                <div class="flex items-center gap-1 md:gap-2 whitespace-nowrap timeline-badge-active bg-blue-100 text-blue-800 border border-blue-300 px-3 py-1.5 rounded-full font-bold shadow-sm">
+                    <span class="timeline-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="zap" aria-hidden="true" class="lucide lucide-zap"><path d="M4 14a1 1 0 0 1-.78-1.63l9.9-10.2a.5.5 0 0 1 .86.46l-1.92 6.02A1 1 0 0 0 13 10h7a1 1 0 0 1 .78 1.63l-9.9 10.2a.5.5 0 0 1-.86-.46l1.92-6.02A1 1 0 0 0 11 14z"></path></svg></span>
+                    <span contenteditable="true" class="editable">MVP (AQUI)</span>
+                </div>
+                
+                <span class="text-gray-300 mx-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span>
+                
+                <div class="flex items-center gap-1 md:gap-2 whitespace-nowrap timeline-badge px-2 py-1 rounded border border-transparent">
+                    <span class="timeline-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="package" aria-hidden="true" class="lucide lucide-package"><path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"></path><path d="M12 22V12"></path><polyline points="3.29 7 12 12 20.71 7"></polyline><path d="m7.5 4.27 9 5.15"></path></svg></span>
+                    <span contenteditable="true" class="editable">Produto</span>
+                </div>
+                
+                <span class="text-gray-300 mx-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span>
+                
+                <div class="flex items-center gap-1 md:gap-2 whitespace-nowrap timeline-badge px-2 py-1 rounded border border-transparent">
+                    <span class="timeline-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="trending-up" aria-hidden="true" class="lucide lucide-trending-up"><path d="M16 7h6v6"></path><path d="m22 7-8.5 8.5-5-5L2 17"></path></svg></span>
+                    <span contenteditable="true" class="editable">Tração</span>
+                </div>
+                
+                <span class="text-gray-300 mx-1"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="arrow-right" aria-hidden="true" class="lucide lucide-arrow-right w-4 h-4"><path d="M5 12h14"></path><path d="m12 5 7 7-7 7"></path></svg></span>
+                
+                <div class="flex items-center gap-1 md:gap-2 whitespace-nowrap timeline-badge px-2 py-1 rounded border border-transparent">
+                    <span class="timeline-icon"><svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" data-lucide="scaling" aria-hidden="true" class="lucide lucide-scaling"><path d="M12 3H5a2 2 0 0 0-2 2v14a2 2 0 0 0 2 2h14a2 2 0 0 0 2-2v-7"></path><path d="M14 15H9v-5"></path><path d="M16 3h5v5"></path><path d="M21 3 9 15"></path></svg></span>
+                    <span contenteditable="true" class="editable">Escala</span>
+                </div>
+            </div>
+
+            <div class="mt-2 text-sm print:text-[11px] text-gray-700 flex flex-col md:flex-row gap-4 border-t border-gray-100 pt-3">
+                <div class="flex-1">
+                    <strong contenteditable="true" class="editable text-gray-900 block">Status atual:</strong> 
+                    <span contenteditable="true" class="editable block mt-1 leading-snug">MVP funcional sendo desenvolvido no Hackamarh. Código estruturado e protótipos validados.</span>
+                </div>
+                <div class="flex-1">
+                    <strong contenteditable="true" class="editable text-gray-900 block">Próximo passo:</strong> 
+                    <span contenteditable="true" class="editable block mt-1 leading-snug">Teste em campo de visão computacional em um viveiro do Estado e conexão de Webhook.</span>
+                </div>
+            </div>
+        </div>
+
+    </div>
+
+    <!-- Scripts de Funcionalidade Global -->
+    <script>
+        // 1. Inicializador dos ícones Lucide
+        lucide.createIcons();
+
+        // 2. Sistema de Interceptação de Colar (Paste) - Força texto puro (Plain Text)
+        document.addEventListener('paste', function(e) {
+            // Verifica se o elemento alvo possui o atributo contenteditable
+            if (e.target.isContentEditable) {
+                e.preventDefault(); // Impede o colar padrão com formatações
+                
+                // Extrai apenas o texto puro da área de transferência
+                let text = (e.originalEvent || e).clipboardData.getData('text/plain');
+                
+                // Insere o texto puro, herdando o design CSS já configurado no elemento
+                document.execCommand('insertText', false, text);
+            }
+        });
+
+        // 3. Sistema para Salvar o HTML mantendo os estados manipulados pelo usuário
+        function downloadHTML() {
+            // Passo A: Sincroniza o estado atual das Checkboxes com o atributo 'checked' real do DOM.
+            // Sem isso, ao salvar o HTML, a visualização dos quadradinhos se perderia.
+            document.querySelectorAll('input[type="checkbox"]').forEach(cb => {
+                if (cb.checked) {
+                    cb.setAttribute('checked', 'checked');
+                } else {
+                    cb.removeAttribute('checked');
+                }
+            });
+
+            // Passo B: Clona o HTML atual (já contendo os textos inseridos via contenteditable)
+            const htmlContent = '<!DOCTYPE html>\n' + document.documentElement.outerHTML;
+
+            // Passo C: Cria o mecanismo nativo de Blob para forçar o Download via navegador
+            const blob = new Blob([htmlContent], { type: 'text/html' });
+            const url = URL.createObjectURL(blob);
+            
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = 'pitch_canvas_editado.html';
+            
+            document.body.appendChild(a);
+            a.click();
+            
+            // Limpeza de memória
+            document.body.removeChild(a);
+            URL.revokeObjectURL(url);
+        }
+    </script>
+
+</body></html>

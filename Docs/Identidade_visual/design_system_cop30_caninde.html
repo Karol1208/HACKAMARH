@@ -1,0 +1,526 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Design System COP30 | Projeto Canindé</title>
+    
+    <!-- Tailwind CSS (Acelerador de UI) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts: Inter (UI) e Plus Jakarta Sans (Institucional/Display) -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Configuração customizada do Tailwind (Nova Paleta Tocantins 2030) -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            light: '#F8F9FA',      /* Fundo Limpo/Institucional */
+                            cerrado: '#285430',    /* Verde Profundo (Conservação) */
+                            river: '#0077B6',      /* Azul Tocantins (Hidrografia) */
+                            jalapao: '#D4A017',    /* Ouro/Dourado (Prosperidade) */
+                            buriti: '#E67E22',     /* Laranja (Inovação/Pôr do sol) */
+                            fire: '#D62828',       /* Vermelho (Alerta controlado) */
+                            earth: '#F1E9D2',      /* Areia/Solo (Recuperação) */
+                            surface: 'rgba(255, 255, 255, 0.7)', /* Glass Claro */
+                            surface_dark: 'rgba(40, 84, 48, 0.05)', /* Glass Verde */
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* CSS Avançado para UX e Efeitos Visuais (Padrão Institucional) */
+        body {
+            background-color: #F8F9FA;
+            color: #2D3748; /* Cinza escuro para leitura confortável */
+            overflow-x: hidden;
+        }
+
+        /* Efeito de Fundo Animado (Curvas de Nível Topográficas / Rios) */
+        .bg-topographic {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            background-color: #F8F9FA;
+            background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='topo' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 50 Q 25 25, 50 50 T 100 50' fill='none' stroke='%23285430' stroke-width='0.5' stroke-opacity='0.1'/%3E%3Cpath d='M0 70 Q 30 40, 60 70 T 100 70' fill='none' stroke='%230077B6' stroke-width='0.5' stroke-opacity='0.08'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23topo)'/%3E%3C/svg%3E");
+            animation: panBg 60s linear infinite;
+        }
+        
+        /* Gradiente suave animado de fundo (Aurora do Cerrado) */
+        .bg-aurora {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2;
+            background: radial-gradient(circle at 10% 20%, rgba(40, 84, 48, 0.05), transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(0, 119, 182, 0.05), transparent 40%),
+                        radial-gradient(circle at 50% 50%, rgba(212, 160, 23, 0.03), transparent 30%);
+            animation: pulse-aurora 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes panBg {
+            from { background-position: 0 0; }
+            to { background-position: -100px 50px; }
+        }
+
+        @keyframes pulse-aurora {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        /* Glassmorphism Limpo e Iluminado */
+        .glass-panel {
+            background: var(--tw-colors-brand-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 10px 40px -10px rgba(40, 84, 48, 0.08);
+        }
+        
+        .glass-panel-dark {
+            background: rgba(40, 84, 48, 0.95);
+            backdrop-filter: blur(16px);
+            -webkit-backdrop-filter: blur(16px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            color: white;
+            box-shadow: 0 20px 40px -10px rgba(0, 0, 0, 0.2);
+        }
+
+        /* Micro-interação para cópia de cores */
+        .color-card {
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+            cursor: pointer;
+            border: 1px solid rgba(0,0,0,0.05);
+            background: white;
+        }
+        .color-card:hover {
+            transform: translateY(-8px) scale(1.02);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1);
+            border-color: rgba(40, 84, 48, 0.2);
+        }
+        .color-card:active {
+            transform: translateY(0) scale(1);
+        }
+
+        /* Notificação Toast */
+        #toast {
+            visibility: hidden;
+            opacity: 0;
+            transform: translate(-50%, 20px);
+            transition: all 0.3s cubic-bezier(0.68, -0.55, 0.265, 1.55);
+        }
+        #toast.show {
+            visibility: visible;
+            opacity: 1;
+            transform: translate(-50%, 0);
+        }
+        
+        /* Gráfico de Progresso Circular (CSS Puro) */
+        .circular-chart {
+          display: block;
+          margin: 0 auto;
+          max-width: 80%;
+          max-height: 250px;
+        }
+        .circle-bg {
+          fill: none;
+          stroke: #eee;
+          stroke-width: 3.8;
+        }
+        .circle {
+          fill: none;
+          stroke-width: 2.8;
+          stroke-linecap: round;
+          animation: progress 1s ease-out forwards;
+        }
+        @keyframes progress {
+          0% { stroke-dasharray: 0 100; }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen selection:bg-brand-cerrado selection:text-white pb-20">
+
+    <!-- Backgrounds Naturais -->
+    <div class="bg-aurora"></div>
+    <div class="bg-topographic"></div>
+
+    <!-- Navegação / Header Institucional -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-gray-200/50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="relative w-14 h-14 flex items-center justify-center">
+                    <img src="Logo_Canindé_GuardiaodoCerrado.png" alt="Logo Canindé" class="w-full h-full object-contain drop-shadow-sm">
+                </div>
+                <div>
+                    <h1 class="font-display font-extrabold text-2xl tracking-tight text-brand-cerrado leading-none">Canindé</h1>
+                    <span class="text-[10px] uppercase tracking-widest text-brand-river font-bold">Plataforma Ambiental TO</span>
+                </div>
+            </div>
+            <nav class="hidden md:flex gap-8 text-sm font-semibold text-gray-500">
+                <a href="#conceito" class="hover:text-brand-cerrado transition">Posicionamento</a>
+                <a href="#cores" class="hover:text-brand-cerrado transition">Cores COP30</a>
+                <a href="#tipografia" class="hover:text-brand-cerrado transition">Tipografia</a>
+                <a href="#ui" class="px-4 py-2 bg-brand-cerrado/10 text-brand-cerrado rounded-full hover:bg-brand-cerrado hover:text-white transition">Impacto (UI)</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-7xl mx-auto px-6 mt-16 space-y-32">
+        
+        <!-- SEÇÃO 1: Posicionamento Global -->
+        <section id="conceito" class="relative">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-earth text-brand-cerrado text-xs font-bold uppercase tracking-wider border border-brand-jalapao/30 mb-6 shadow-sm">
+                <i data-lucide="globe-2" class="w-4 h-4"></i> Nível Global (ONU/GCF)
+            </div>
+            <h2 class="font-display text-4xl md:text-5xl lg:text-6xl font-extrabold text-brand-cerrado mb-6 leading-tight max-w-4xl tracking-tight">
+                Ecossistema Digital para <span class="text-brand-river">Conservação</span> e Bioeconomia do Tocantins.
+            </h2>
+            <p class="text-gray-600 text-lg md:text-xl max-w-3xl leading-relaxed mb-12 font-medium">
+                A evolução da marca Canindé transcende a fiscalização. Nós integramos Drones, IA, e Satélites em uma plataforma que prova valor real: carbono capturado, nascentes recuperadas e prosperidade em harmonia com o Cerrado. Um passaporte para o financiamento climático global.
+            </p>
+
+            <!-- Pilares Estratégicos -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6">
+                <div class="glass-panel p-6 rounded-2xl hover:-translate-y-1 transition duration-300">
+                    <div class="w-12 h-12 rounded-full bg-brand-cerrado/10 flex items-center justify-center text-brand-cerrado mb-4">
+                        <i data-lucide="shield-check" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-gray-900 text-lg mb-2">Guardião do Cerrado</h3>
+                    <p class="text-sm text-gray-600">Monitoramento ativo por IA e drones solares garantindo proteção ininterrupta.</p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-2xl border-b-4 border-brand-jalapao hover:-translate-y-1 transition duration-300">
+                    <div class="w-12 h-12 rounded-full bg-brand-jalapao/10 flex items-center justify-center text-brand-jalapao mb-4">
+                        <i data-lucide="coins" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-gray-900 text-lg mb-2">CarbonTO</h3>
+                    <p class="text-sm text-gray-600">Plataforma de certificação, integrando produtores (B2B) ao mercado de créditos de carbono.</p>
+                </div>
+                
+                <div class="glass-panel p-6 rounded-2xl border-b-4 border-brand-river hover:-translate-y-1 transition duration-300">
+                    <div class="w-12 h-12 rounded-full bg-brand-river/10 flex items-center justify-center text-brand-river mb-4">
+                        <i data-lucide="droplets" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-gray-900 text-lg mb-2">Nascentes do Futuro</h3>
+                    <p class="text-sm text-gray-600">Auditoria automatizada da recuperação de recursos hídricos e matas ciliares (APPs).</p>
+                </div>
+
+                <div class="glass-panel p-6 rounded-2xl border-b-4 border-brand-buriti hover:-translate-y-1 transition duration-300">
+                    <div class="w-12 h-12 rounded-full bg-brand-buriti/10 flex items-center justify-center text-brand-buriti mb-4">
+                        <i data-lucide="sprout" class="w-6 h-6"></i>
+                    </div>
+                    <h3 class="font-display font-bold text-gray-900 text-lg mb-2">Viveiros Conectados</h3>
+                    <p class="text-sm text-gray-600">Rastreabilidade via visão computacional, da muda à floresta madura.</p>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 2: Nova Paleta de Cores (Copiável) -->
+        <section id="cores" class="pt-8 border-t border-gray-200">
+            <div class="flex flex-col md:flex-row justify-between items-start md:items-end mb-8 gap-4">
+                <div>
+                    <h2 class="font-display text-3xl font-extrabold text-gray-900 mb-2 flex items-center gap-3">
+                        <i data-lucide="palette" class="text-brand-cerrado"></i> Nova Paleta Tocantins 2030
+                    </h2>
+                    <p class="text-gray-500 font-medium">Tons orgânicos, modernos e sofisticados. (Clique para copiar HEX)</p>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                
+                <!-- Cor 1: Cerrado Profundo -->
+                <div class="color-card rounded-2xl group overflow-hidden" onclick="copyToClipboard('#285430', 'Cerrado Profundo')">
+                    <div class="h-28 bg-[#285430] p-4 flex items-start justify-end">
+                        <i data-lucide="copy" class="w-4 h-4 text-white/50 group-hover:text-white transition"></i>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <p class="font-display font-bold text-sm text-gray-900">Cerrado Profundo</p>
+                        <p class="text-xs text-gray-500 mt-1 font-mono">#285430</p>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">Conservação / Primária</p>
+                    </div>
+                </div>
+
+                <!-- Cor 2: Azul Tocantins -->
+                <div class="color-card rounded-2xl group overflow-hidden" onclick="copyToClipboard('#0077B6', 'Azul Tocantins')">
+                    <div class="h-28 bg-[#0077B6] p-4 flex items-start justify-end">
+                        <i data-lucide="copy" class="w-4 h-4 text-white/50 group-hover:text-white transition"></i>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <p class="font-display font-bold text-sm text-gray-900">Azul Tocantins</p>
+                        <p class="text-xs text-gray-500 mt-1 font-mono">#0077B6</p>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">Água / Confiança</p>
+                    </div>
+                </div>
+
+                <!-- Cor 3: Dourado Jalapão -->
+                <div class="color-card rounded-2xl group overflow-hidden" onclick="copyToClipboard('#D4A017', 'Dourado Jalapão')">
+                    <div class="h-28 bg-[#D4A017] p-4 flex items-start justify-end">
+                        <i data-lucide="copy" class="w-4 h-4 text-white/50 group-hover:text-white transition"></i>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <p class="font-display font-bold text-sm text-gray-900">Ouro Jalapão</p>
+                        <p class="text-xs text-gray-500 mt-1 font-mono">#D4A017</p>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">Prosperidade / Bioeconomia</p>
+                    </div>
+                </div>
+
+                <!-- Cor 4: Laranja Buriti -->
+                <div class="color-card rounded-2xl group overflow-hidden" onclick="copyToClipboard('#E67E22', 'Laranja Buriti')">
+                    <div class="h-28 bg-[#E67E22] p-4 flex items-start justify-end">
+                        <i data-lucide="copy" class="w-4 h-4 text-white/50 group-hover:text-white transition"></i>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <p class="font-display font-bold text-sm text-gray-900">Laranja Buriti</p>
+                        <p class="text-xs text-gray-500 mt-1 font-mono">#E67E22</p>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">Inovação / Energia</p>
+                    </div>
+                </div>
+
+                <!-- Cor 5: Vermelho Alerta -->
+                <div class="color-card rounded-2xl group overflow-hidden" onclick="copyToClipboard('#D62828', 'Vermelho Fogo')">
+                    <div class="h-28 bg-[#D62828] p-4 flex items-start justify-end">
+                        <i data-lucide="copy" class="w-4 h-4 text-white/50 group-hover:text-white transition"></i>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <p class="font-display font-bold text-sm text-gray-900">Fogo Controlado</p>
+                        <p class="text-xs text-gray-500 mt-1 font-mono">#D62828</p>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">Alertas / Infração</p>
+                    </div>
+                </div>
+
+                <!-- Cor 6: Areia Natural -->
+                <div class="color-card rounded-2xl group overflow-hidden" onclick="copyToClipboard('#F1E9D2', 'Areia Natural')">
+                    <div class="h-28 bg-[#F1E9D2] border-b border-gray-200 p-4 flex items-start justify-end">
+                        <i data-lucide="copy" class="w-4 h-4 text-gray-400 group-hover:text-gray-700 transition"></i>
+                    </div>
+                    <div class="p-4 bg-white">
+                        <p class="font-display font-bold text-sm text-gray-900">Areia Natural</p>
+                        <p class="text-xs text-gray-500 mt-1 font-mono">#F1E9D2</p>
+                        <p class="text-[10px] text-gray-400 mt-2 uppercase tracking-wide">Solo / Backgrounds</p>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 3: Tipografia Institucional -->
+        <section id="tipografia" class="pt-8 border-t border-gray-200">
+            <h2 class="font-display text-3xl font-extrabold text-gray-900 mb-8 flex items-center gap-3">
+                <i data-lucide="type" class="text-brand-river"></i> Tipografia Institucional (ONU Padrão)
+            </h2>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                <!-- Headings -->
+                <div class="glass-panel p-8 rounded-3xl border border-gray-200 bg-white/60">
+                    <div class="flex justify-between items-start border-b border-gray-200 pb-4 mb-6">
+                        <div>
+                            <h3 class="text-xs text-brand-river uppercase tracking-widest font-extrabold">Identidade / Títulos Principais</h3>
+                            <p class="text-3xl text-gray-900 font-display font-extrabold mt-1">Plus Jakarta Sans</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-6 text-gray-900 font-display">
+                        <div>
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">Hero / Relatórios (ExtraBold)</span>
+                            <span class="text-4xl md:text-5xl font-extrabold tracking-tight">O Futuro do Cerrado</span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">Seções (Bold)</span>
+                            <span class="text-2xl font-bold">Monitoramento Hídrico 2026</span>
+                        </div>
+                        <div>
+                            <span class="text-xs font-bold text-gray-400 uppercase tracking-wider mb-1 block">Cards (SemiBold)</span>
+                            <span class="text-lg font-semibold">Auditoria de Créditos de Carbono</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Interface -->
+                <div class="glass-panel p-8 rounded-3xl border-t-8 border-t-brand-cerrado bg-white">
+                    <div class="flex justify-between items-start border-b border-gray-200 pb-4 mb-6">
+                        <div>
+                            <h3 class="text-xs text-brand-cerrado uppercase tracking-widest font-extrabold">Dados / Leitura de UI</h3>
+                            <p class="text-3xl text-gray-900 font-sans font-bold mt-1">Inter</p>
+                        </div>
+                    </div>
+                    
+                    <div class="space-y-5 text-gray-600 font-sans">
+                        <p class="text-base leading-relaxed font-medium">
+                            A fonte <strong class="text-gray-900">Inter</strong> é mantida para garantir alta legibilidade nos dados tabulares, coordenadas de GPS e relatórios detalhados que a IA irá gerar.
+                        </p>
+                        <div class="p-4 bg-brand-light rounded-xl border border-gray-200 mt-4">
+                            <div class="flex justify-between items-center text-sm mb-2">
+                                <span class="font-medium text-gray-500">Coordenada Geográfica</span>
+                                <span class="font-mono text-gray-900 font-semibold">-10.1833, -48.3333 (Palmas)</span>
+                            </div>
+                            <div class="flex justify-between items-center text-sm">
+                                <span class="font-medium text-gray-500">Área Restaurada (PRAD)</span>
+                                <span class="text-brand-cerrado font-bold">142.5 Hectares</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- SEÇÃO 4: Dashboard de Impacto (COP30 Ready) -->
+        <section id="ui" class="pt-8 border-t border-gray-200 pb-12">
+            <div class="text-center mb-12">
+                <span class="px-4 py-1.5 rounded-full bg-brand-cerrado text-white text-xs font-bold uppercase tracking-widest shadow-md">Evolução do Produto</span>
+                <h2 class="font-display text-3xl md:text-4xl font-extrabold text-gray-900 mt-6 mb-4">
+                    Painel de Impacto Ambiental (ESG)
+                </h2>
+                <p class="text-gray-600 font-medium max-w-2xl mx-auto">Em vez de mostrar apenas ocorrências de queimadas, o Canindé gera indicadores positivos em tempo real, atraindo investimentos climáticos.</p>
+            </div>
+
+            <!-- Dashboard Mockup -->
+            <div class="glass-panel rounded-3xl p-6 md:p-10 border border-gray-200/60 shadow-2xl">
+                
+                <!-- Header do Dashboard -->
+                <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-8 gap-4">
+                    <div>
+                        <h3 class="font-display font-extrabold text-2xl text-gray-900">Visão Geral do Cerrado</h3>
+                        <p class="text-sm text-gray-500 font-medium">Dados auditados via Satélite e Drones Autónomos (Ano Corrente)</p>
+                    </div>
+                    <button class="bg-white border border-gray-300 text-gray-700 hover:bg-gray-50 px-4 py-2 rounded-lg font-bold text-sm shadow-sm flex items-center gap-2 transition">
+                        <i data-lucide="download-cloud" class="w-4 h-4 text-brand-river"></i> Gerar Relatório GCF
+                    </button>
+                </div>
+
+                <!-- KPIs Cards (Design Limpo e Positivo) -->
+                <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+                    
+                    <!-- KPI 1 -->
+                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-full bg-green-50 flex items-center justify-center text-brand-cerrado">
+                                <i data-lucide="trees" class="w-5 h-5"></i>
+                            </div>
+                            <span class="flex items-center gap-1 text-xs font-bold text-brand-cerrado bg-green-50 px-2 py-1 rounded-md">
+                                <i data-lucide="trending-up" class="w-3 h-3"></i> +12%
+                            </span>
+                        </div>
+                        <h4 class="text-gray-500 text-sm font-semibold mb-1">Árvores Plantadas (Vivas)</h4>
+                        <p class="font-display font-extrabold text-3xl text-gray-900">2.580<span class="text-lg text-gray-400">k</span></p>
+                    </div>
+
+                    <!-- KPI 2 -->
+                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-brand-river">
+                                <i data-lucide="cloud-snow" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-gray-500 text-sm font-semibold mb-1">CO₂ Equivalente Capturado</h4>
+                        <p class="font-display font-extrabold text-3xl text-gray-900">1.245<span class="text-lg text-gray-400"> mi/t</span></p>
+                    </div>
+
+                    <!-- KPI 3 -->
+                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition">
+                        <div class="flex justify-between items-start mb-4">
+                            <div class="w-10 h-10 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+                                <i data-lucide="droplets" class="w-5 h-5"></i>
+                            </div>
+                            <span class="flex items-center gap-1 text-xs font-bold text-blue-600 bg-blue-50 px-2 py-1 rounded-md">
+                                APPs Auditadas
+                            </span>
+                        </div>
+                        <h4 class="text-gray-500 text-sm font-semibold mb-1">Nascentes Protegidas</h4>
+                        <p class="font-display font-extrabold text-3xl text-gray-900">4.218</p>
+                    </div>
+
+                    <!-- KPI 4 -->
+                    <div class="bg-white rounded-2xl p-5 border border-gray-100 shadow-sm hover:shadow-md transition relative overflow-hidden">
+                        <!-- Fundo tech sutil -->
+                        <div class="absolute right-0 bottom-0 text-gray-100 transform translate-x-1/4 translate-y-1/4">
+                            <i data-lucide="cpu" class="w-24 h-24"></i>
+                        </div>
+                        <div class="flex justify-between items-start mb-4 relative z-10">
+                            <div class="w-10 h-10 rounded-full bg-orange-50 flex items-center justify-center text-brand-buriti">
+                                <i data-lucide="plane" class="w-5 h-5"></i>
+                            </div>
+                        </div>
+                        <h4 class="text-gray-500 text-sm font-semibold mb-1 relative z-10">Voos Autônomos Drones</h4>
+                        <p class="font-display font-extrabold text-3xl text-gray-900 relative z-10">58.000</p>
+                    </div>
+                </div>
+
+                <!-- Detalhe em Destaque (Integração B2B) -->
+                <div class="bg-brand-cerrado rounded-2xl p-6 md:p-8 flex flex-col md:flex-row items-center justify-between shadow-xl relative overflow-hidden">
+                    <div class="absolute right-0 top-0 w-64 h-64 bg-white opacity-5 rounded-full blur-3xl transform translate-x-1/2 -translate-y-1/2"></div>
+                    
+                    <div class="relative z-10 max-w-2xl text-center md:text-left mb-6 md:mb-0">
+                        <div class="inline-flex items-center gap-2 px-3 py-1 rounded text-white bg-white/10 text-xs font-bold uppercase tracking-wider border border-white/20 mb-3">
+                            <i data-lucide="award" class="w-4 h-4 text-brand-jalapao"></i> Novo Módulo B2B
+                        </div>
+                        <h4 class="font-display font-extrabold text-2xl md:text-3xl text-white mb-2">Certificação CarbonTO</h4>
+                        <p class="text-brand-earth/80 font-medium">92% das propriedades em restauração cadastradas via App Scanner de Mudas estão com sobrevivência florestal superior a 3 anos, elegíveis para Pagamento por Serviços Ambientais.</p>
+                    </div>
+
+                    <div class="relative z-10 shrink-0">
+                        <svg viewBox="0 0 36 36" class="circular-chart text-brand-jalapao w-32 h-32">
+                          <path class="circle-bg" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" />
+                          <path class="circle" stroke-dasharray="92, 100" d="M18 2.0845 a 15.9155 15.9155 0 0 1 0 31.831 a 15.9155 15.9155 0 0 1 0 -31.831" stroke="currentColor"/>
+                          <text x="18" y="20.35" class="percentage" font-family="Plus Jakarta Sans" font-weight="bold" font-size="8" fill="white" text-anchor="middle">92%</text>
+                        </svg>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+        
+    </main>
+
+    <!-- Footer Institucional -->
+    <footer class="bg-gray-900 text-white mt-12 py-10 border-t-4 border-brand-cerrado">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i data-lucide="leaf" class="text-brand-cerrado w-5 h-5"></i>
+                <span class="font-display font-bold text-lg">Projeto Canindé</span>
+            </div>
+            <p class="text-gray-400 text-sm font-medium text-center md:text-right">
+                O futuro da bioeconomia tocantinense. <br class="md:hidden">Pronto para a COP30.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Elemento Toast de Notificação -->
+    <div id="toast" class="fixed bottom-10 left-1/2 glass-panel-dark text-white px-6 py-3 rounded-full flex items-center gap-3 z-50">
+        <i data-lucide="check" class="text-brand-jalapao w-5 h-5"></i>
+        <span id="toast-msg" class="text-sm font-bold font-sans"></span>
+    </div>
+
+    <!-- Scripts da Interface -->
+    <script>
+        // Inicializa ícones elegantes
+        lucide.createIcons();
+
+        // Função de Cópia Elegante (Feedback UX)
+        function copyToClipboard(text, name) {
+            navigator.clipboard.writeText(text).then(() => {
+                const toast = document.getElementById('toast');
+                const msg = document.getElementById('toast-msg');
+                
+                msg.innerHTML = `Cor <span class="text-brand-jalapao">${text}</span> (${name}) copiada!`;
+                toast.classList.add('show');
+                
+                // Oculta suavemente após 3.5 segundos
+                setTimeout(() => {
+                    toast.classList.remove('show');
+                }, 3500);
+            });
+        }
+    </script>
+</body>
+</html>

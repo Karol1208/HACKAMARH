@@ -1,0 +1,390 @@
+<!DOCTYPE html>
+<html lang="pt-BR" class="scroll-smooth">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Documentação | Projeto Canindé: Guardião do Cerrado</title>
+    
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    
+    <!-- Google Fonts: Inter e Plus Jakarta Sans -->
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600&family=Plus+Jakarta+Sans:wght@500;600;700;800&display=swap" rel="stylesheet">
+
+    <!-- Configuração Tailwind -->
+    <script>
+        tailwind.config = {
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'sans-serif'],
+                        display: ['Plus Jakarta Sans', 'sans-serif'],
+                    },
+                    colors: {
+                        brand: {
+                            light: '#F8F9FA',      
+                            cerrado: '#285430',    
+                            river: '#0077B6',      
+                            jalapao: '#D4A017',    
+                            buriti: '#E67E22',     
+                            fire: '#D62828',       
+                            earth: '#F1E9D2',      
+                            surface: 'rgba(255, 255, 255, 0.7)',
+                            surface_dark: 'rgba(40, 84, 48, 0.05)',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        body {
+            background-color: #F8F9FA;
+            color: #2D3748;
+            overflow-x: hidden;
+        }
+
+        /* Topographic Background Pattern */
+        .bg-topographic {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -1;
+            background-color: #F8F9FA;
+            background-image: url("data:image/svg+xml,%3Csvg width='100%25' height='100%25' xmlns='http://www.w3.org/2000/svg'%3E%3Cdefs%3E%3Cpattern id='topo' width='100' height='100' patternUnits='userSpaceOnUse'%3E%3Cpath d='M0 50 Q 25 25, 50 50 T 100 50' fill='none' stroke='%23285430' stroke-width='0.5' stroke-opacity='0.1'/%3E%3Cpath d='M0 70 Q 30 40, 60 70 T 100 70' fill='none' stroke='%230077B6' stroke-width='0.5' stroke-opacity='0.08'/%3E%3C/pattern%3E%3C/defs%3E%3Crect width='100%25' height='100%25' fill='url(%23topo)'/%3E%3C/svg%3E");
+            animation: panBg 60s linear infinite;
+        }
+        
+        .bg-aurora {
+            position: fixed;
+            top: 0; left: 0; width: 100vw; height: 100vh;
+            z-index: -2;
+            background: radial-gradient(circle at 10% 20%, rgba(40, 84, 48, 0.05), transparent 40%),
+                        radial-gradient(circle at 90% 80%, rgba(0, 119, 182, 0.05), transparent 40%),
+                        radial-gradient(circle at 50% 50%, rgba(212, 160, 23, 0.03), transparent 30%);
+            animation: pulse-aurora 10s ease-in-out infinite alternate;
+        }
+
+        @keyframes panBg {
+            from { background-position: 0 0; }
+            to { background-position: -100px 50px; }
+        }
+
+        @keyframes pulse-aurora {
+            0% { transform: scale(1); opacity: 0.8; }
+            100% { transform: scale(1.1); opacity: 1; }
+        }
+
+        .glass-panel {
+            background: var(--tw-colors-brand-surface);
+            backdrop-filter: blur(20px);
+            -webkit-backdrop-filter: blur(20px);
+            border: 1px solid rgba(255, 255, 255, 1);
+            box-shadow: 0 10px 40px -10px rgba(40, 84, 48, 0.08);
+        }
+
+        .section-card {
+            transition: all 0.3s ease;
+        }
+        .section-card:hover {
+            transform: translateY(-4px);
+            box-shadow: 0 15px 30px -5px rgba(0, 0, 0, 0.1);
+        }
+
+        .code-block {
+            background-color: #1e1e1e;
+            color: #d4d4d4;
+            padding: 1rem;
+            border-radius: 0.5rem;
+            overflow-x: auto;
+            font-family: monospace;
+            font-size: 0.875rem;
+        }
+
+        /* Tabs Interativas */
+        .tab-content {
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+        .tab-content.active {
+            display: block;
+        }
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body class="antialiased min-h-screen selection:bg-brand-cerrado selection:text-white pb-20">
+
+    <!-- Backgrounds -->
+    <div class="bg-aurora"></div>
+    <div class="bg-topographic"></div>
+
+    <!-- Header -->
+    <header class="glass-panel sticky top-0 z-50 border-b border-gray-200/50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-4">
+                <div class="relative w-14 h-14 flex items-center justify-center">
+                    <img src="../Identidade_visual/Logo_Canindé_GuardiaodoCerrado.png" alt="Logo Canindé" class="w-full h-full object-contain drop-shadow-sm">
+                </div>
+                <div>
+                    <h1 class="font-display font-extrabold text-2xl tracking-tight text-brand-cerrado leading-none">Canindé Docs</h1>
+                    <span class="text-[10px] uppercase tracking-widest text-brand-river font-bold">Guardião do Cerrado</span>
+                </div>
+            </div>
+            <nav class="hidden md:flex gap-8 text-sm font-semibold text-gray-500">
+                <a href="#negocios" class="hover:text-brand-cerrado transition">Negócios</a>
+                <a href="#arquitetura" class="hover:text-brand-cerrado transition">Arquitetura & Setup</a>
+                <a href="#bug-report" class="hover:text-brand-cerrado transition">Análise de Bugs</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="max-w-5xl mx-auto px-6 mt-16 space-y-24">
+        
+        <!-- Hero Section -->
+        <section class="text-center relative">
+            <div class="inline-flex items-center gap-2 px-4 py-1.5 rounded-full bg-brand-earth text-brand-cerrado text-xs font-bold uppercase tracking-wider border border-brand-jalapao/30 mb-6 shadow-sm">
+                <i data-lucide="award" class="w-4 h-4"></i> Equipe WB Projects Design & Dev
+            </div>
+            <h2 class="font-display text-4xl md:text-5xl font-extrabold text-gray-900 mb-6 leading-tight">
+                Documentação Técnica e <span class="text-brand-river">Estratégica</span>
+            </h2>
+            <p class="text-gray-600 text-lg md:text-xl max-w-3xl mx-auto leading-relaxed font-medium">
+                Relatório completo do MVP. Foco no Eixo 2: Restauração Ecológica e Monitoramento de Áreas Degradadas. Contém requisitos de negócio, guias de setup e arquitetura.
+            </p>
+        </section>
+
+        <!-- Documentação de Negócios (Eixo 2) -->
+        <section id="negocios" class="scroll-mt-32">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="p-3 bg-brand-cerrado/10 rounded-xl text-brand-cerrado">
+                    <i data-lucide="briefcase" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-display text-3xl font-bold text-gray-900">1. Documentação de Negócio</h3>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <!-- Problema -->
+                <div class="glass-panel p-8 rounded-3xl border-t-4 border-t-brand-fire section-card">
+                    <h4 class="font-display text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="target" class="text-brand-fire"></i> O Problema (A "Dor")
+                    </h4>
+                    <p class="text-gray-600 mb-4 text-sm leading-relaxed">
+                        Inviabilidade financeira do monitoramento <i>in loco</i> em um estado com 91% de bioma Cerrado. Falta de rastreabilidade do sucesso do plantio (PRAD) ao longo de 5 anos.
+                    </p>
+                </div>
+
+                <!-- Modelo Financeiro -->
+                <div class="glass-panel p-8 rounded-3xl border-t-4 border-t-brand-jalapao section-card">
+                    <h4 class="font-display text-lg font-bold text-gray-900 mb-4 flex items-center gap-2">
+                        <i data-lucide="coins" class="text-brand-jalapao"></i> Modelo Financeiro & Custos
+                    </h4>
+                    <ul class="text-gray-600 text-sm space-y-3">
+                        <li class="flex items-center justify-between border-b border-gray-100 pb-2">
+                            <span class="font-medium">Setup Inicial:</span> 
+                            <span class="font-bold text-gray-900">R$ 75k – R$ 95k</span>
+                        </li>
+                        <li class="flex items-center justify-between pt-1">
+                            <span class="font-medium">Manutenção (SaaS):</span> 
+                            <span class="font-bold text-gray-900">R$ 10.800/mês</span>
+                        </li>
+                    </ul>
+                </div>
+
+                <!-- Proposta de Valor -->
+                <div class="glass-panel p-8 rounded-3xl border-t-4 border-t-brand-river section-card md:col-span-2">
+                    <h4 class="font-display text-lg font-bold text-gray-900 mb-6 flex items-center gap-2">
+                        <i data-lucide="gem" class="text-brand-river"></i> Propostas de Valor
+                    </h4>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                            <h5 class="font-bold text-sm text-brand-river mb-2">Governamental (B2G)</h5>
+                            <p class="text-xs text-gray-600">Redução de Custos com a substituição de vistorias físicas por monitoramento via satélite (Brasil Mais) e drones. Eficiência filtrando falsos alertas via IA.</p>
+                        </div>
+                        <div class="bg-white p-5 rounded-xl border border-gray-100 shadow-sm">
+                            <h5 class="font-bold text-sm text-brand-jalapao mb-2">Produtor (B2B)</h5>
+                            <p class="text-xs text-gray-600">Acesso ao Selo Verde e Créditos, garantindo juros menores e conexão com o mercado de carbono mediante prova técnica de sobrevivência das mudas.</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Arquitetura e Setup Técnico -->
+        <section id="arquitetura" class="scroll-mt-32">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="p-3 bg-brand-river/10 rounded-xl text-brand-river">
+                    <i data-lucide="cpu" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-display text-3xl font-bold text-gray-900">2. Documentação Técnica e Setup</h3>
+            </div>
+
+            <!-- Tabs de Instalação -->
+            <div class="glass-panel rounded-3xl p-6 md:p-10 border border-gray-200">
+                <div class="flex flex-wrap gap-2 mb-8 border-b border-gray-200 pb-4">
+                    <button class="tab-btn active px-5 py-2.5 rounded-full text-sm font-bold bg-brand-cerrado text-white transition shadow-md" data-target="tab-back">Backend (FastAPI)</button>
+                    <button class="tab-btn px-5 py-2.5 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition" data-target="tab-front">Frontend (Web)</button>
+                    <button class="tab-btn px-5 py-2.5 rounded-full text-sm font-bold bg-gray-100 text-gray-600 hover:bg-gray-200 transition" data-target="tab-mobile">Mobile (Flutter)</button>
+                </div>
+
+                <!-- Tab Backend -->
+                <div id="tab-back" class="tab-content active space-y-6">
+                    <h4 class="font-display text-xl font-bold text-gray-900">Backend em Python</h4>
+                    <p class="text-sm text-gray-600">O núcleo do sistema. Gerencia o algoritmo Sweep Line (RN02), Visão Computacional (YOLOv8/TFLite - RN05) e integrações (RN01).</p>
+                    
+                    <div class="grid grid-cols-2 md:grid-cols-4 gap-3 mb-6">
+                        <span class="text-xs font-mono bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md border border-gray-200 text-center">fastapi</span>
+                        <span class="text-xs font-mono bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md border border-gray-200 text-center">uvicorn</span>
+                        <span class="text-xs font-mono bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md border border-gray-200 text-center">geoalchemy2</span>
+                        <span class="text-xs font-mono bg-gray-100 text-gray-700 px-3 py-1.5 rounded-md border border-gray-200 text-center">ultralytics</span>
+                    </div>
+
+                    <div class="code-block">
+# 1. Crie e ative um ambiente virtual
+python -m venv venv
+# Windows:
+.\venv\Scripts\Activate.ps1
+# Linux/Mac:
+source venv/bin/activate
+
+# 2. Instale as dependências
+pip install -r requirements.txt
+
+# 3. Execute o servidor
+uvicorn main:app --reload --host 0.0.0.0 --port 8000
+                    </div>
+                </div>
+
+                <!-- Tab Frontend -->
+                <div id="tab-front" class="tab-content space-y-6">
+                    <h4 class="font-display text-xl font-bold text-gray-900">Frontend Web (Dashboard ESG)</h4>
+                    <p class="text-sm text-gray-600">Aplicação visual que exibe relatórios de restauração, dashboards gerenciais e alertas.</p>
+                    
+                    <div class="code-block">
+# A aplicação utiliza HTML/JS/CSS Vanilla e Tailwind via CDN.
+# Para iniciar o ambiente local:
+
+# 1. Navegue até a pasta web
+cd "front end/web"
+
+# 2. Inicie o servidor simples do Python
+python -m http.server 5500
+
+# 3. Acesse no navegador
+http://localhost:5500
+                    </div>
+                </div>
+
+                <!-- Tab Mobile -->
+                <div id="tab-mobile" class="tab-content space-y-6">
+                    <h4 class="font-display text-xl font-bold text-gray-900">Aplicativo Mobile (Flutter)</h4>
+                    <p class="text-sm text-gray-600">App para captura de fotos georreferenciadas e escaneamento das mudas em campo via IA.</p>
+                    
+                    <div class="code-block">
+# 1. Instale o Flutter SDK em sua máquina.
+
+# 2. Navegue até o diretório do aplicativo
+cd "front end/mobile"
+
+# 3. Instale as dependências
+flutter pub get
+
+# 4. Rode a aplicação no emulador ou dispositivo físico
+flutter run
+                    </div>
+                </div>
+            </div>
+        </section>
+
+        <!-- Análise Técnica (Bug Report) -->
+        <section id="bug-report" class="scroll-mt-32">
+            <div class="flex items-center gap-3 mb-8">
+                <div class="p-3 bg-brand-buriti/10 rounded-xl text-brand-buriti">
+                    <i data-lucide="bug" class="w-6 h-6"></i>
+                </div>
+                <h3 class="font-display text-3xl font-bold text-gray-900">3. Levantamento Técnico & Análise</h3>
+            </div>
+
+            <div class="bg-red-50 p-6 md:p-8 rounded-3xl border border-red-100 relative overflow-hidden">
+                <div class="absolute right-0 top-0 opacity-10 transform translate-x-4 -translate-y-4">
+                    <i data-lucide="alert-octagon" class="w-32 h-32 text-red-500"></i>
+                </div>
+                
+                <h4 class="font-display font-bold text-xl text-red-900 mb-4 flex items-center gap-2 relative z-10">
+                    Falha na Funcionalidade "Exportar" (Gestão de Viveiros)
+                </h4>
+                
+                <div class="space-y-4 relative z-10 text-red-800 text-sm">
+                    <p><strong>Descrição do Relato:</strong> O botão "Exportar" não está executando a funcionalidade de forma correta e não utiliza as bibliotecas backend, apesar da ferramenta <code>fpdf2</code> estar instalada na API.</p>
+                    
+                    <div class="bg-white p-5 rounded-xl border border-red-200 shadow-sm mt-4">
+                        <h5 class="font-bold text-gray-900 mb-2">Diagnóstico:</h5>
+                        <p class="text-gray-600 mb-3 leading-relaxed">
+                            A análise do arquivo <code>viveiros.js</code> no frontend revelou que a exportação foi construída utilizando uma abordagem puramente <i>client-side</i> (Javascript gerando um arquivo <code>.csv</code> nativo através da manipulação de strings).
+                        </p>
+                        <p class="text-gray-600 leading-relaxed">
+                            No Backend, notamos que o arquivo <code>relatorios.py</code> possui a arquitetura para gerar PDFs com a biblioteca <code>fpdf2</code>, porém, no arquivo <code>viveiros.py</code>, <strong>não foi criado um endpoint</strong> (como <code>GET /viveiros/exportar</code>) para conectar o Dashboard a essa capacidade do Backend.
+                        </p>
+                    </div>
+
+                    <div class="bg-brand-cerrado p-5 rounded-xl text-white shadow-sm mt-4">
+                        <h5 class="font-bold mb-2 flex items-center gap-2"><i data-lucide="check-circle" class="w-4 h-4 text-brand-jalapao"></i> Resolução Proposta:</h5>
+                        <ol class="list-decimal pl-5 space-y-2 text-brand-earth text-sm">
+                            <li>Desenvolver o endpoint <code>/viveiros/exportar</code> no arquivo <code>viveiros.py</code> integrando o PostGIS ao gerador de PDF/Excel.</li>
+                            <li>Remover a lógica <i>hardcoded</i> do evento de clique no botão em <code>viveiros.js</code>.</li>
+                            <li>Substituir a ação no Frontend por uma requisição API ou link de download direto apontando para o servidor.</li>
+                        </ol>
+                    </div>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- Footer -->
+    <footer class="bg-gray-900 text-white mt-24 py-10 border-t-4 border-brand-cerrado relative z-20">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col md:flex-row justify-between items-center gap-4">
+            <div class="flex items-center gap-3">
+                <i data-lucide="leaf" class="text-brand-cerrado w-5 h-5"></i>
+                <span class="font-display font-bold text-lg">WB Projects Design & Dev</span>
+            </div>
+            <p class="text-gray-400 text-sm font-medium text-center md:text-right">
+                Sistema Canindé: Guardião do Cerrado.<br class="md:hidden"> COP30 Ready.
+            </p>
+        </div>
+    </footer>
+
+    <!-- Scripts -->
+    <script>
+        lucide.createIcons();
+
+        // Tabs Logic
+        document.querySelectorAll('.tab-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                // Remove active de todos os botões
+                document.querySelectorAll('.tab-btn').forEach(b => {
+                    b.classList.remove('bg-brand-cerrado', 'text-white', 'shadow-md');
+                    b.classList.add('bg-gray-100', 'text-gray-600');
+                });
+                // Adiciona active no clicado
+                btn.classList.remove('bg-gray-100', 'text-gray-600');
+                btn.classList.add('bg-brand-cerrado', 'text-white', 'shadow-md');
+
+                // Esconde todo conteúdo
+                document.querySelectorAll('.tab-content').forEach(content => {
+                    content.classList.remove('active');
+                });
+
+                // Mostra o conteúdo alvo
+                const target = document.getElementById(btn.getAttribute('data-target'));
+                target.classList.add('active');
+            });
+        });
+    </script>
+</body>
+</html>

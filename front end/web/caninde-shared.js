@@ -39,10 +39,8 @@ function renderSidebar() {
             <div>
                 <div class="h-20 flex items-center justify-between lg:justify-start px-6 border-b border-gray-100">
                     <div class="flex items-center gap-3">
-                        <div class="relative w-10 h-10 flex items-center justify-center shrink-0">
-                            <div class="absolute inset-0 bg-brand-cerrado rounded-tl-xl rounded-br-xl opacity-20 transform rotate-45"></div>
-                            <div class="absolute inset-1 bg-brand-river rounded-tl-xl rounded-br-xl opacity-80 transform rotate-45 mix-blend-multiply"></div>
-                            <i data-lucide="leaf" class="text-white w-5 h-5 z-10 relative transform -rotate-12"></i>
+                        <div class="relative w-14 h-14 flex items-center justify-center shrink-0">
+                            <img src="logo.png" alt="Logo Canindé" class="w-full h-full object-contain">
                         </div>
                         <div>
                             <h1 class="font-display font-extrabold text-xl text-brand-cerrado leading-none">Canindé</h1>
