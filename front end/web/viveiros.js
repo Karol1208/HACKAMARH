@@ -333,18 +333,17 @@ document.addEventListener('DOMContentLoaded', async () => {
             btn.addEventListener('click', abrirModal);
     });
 
-    document.querySelector('button i[data-lucide="download"]')
-        ?.closest('button')
-        ?.addEventListener('click', () => {
-            const rows = [['Coluna', 'Lote', 'Especie', 'Viveiro', 'Destino']];
-            board.em_preparo.forEach(l => rows.push(['Em Preparo', l.lote, l.especie, l.viveiro, l.destino]));
-            board.prontas.forEach(l => rows.push(['Prontas', l.lote, l.especie, l.viveiro, l.destino]));
-            const csv = rows.map(r => r.join(';')).join('\n');
-            const a = document.createElement('a');
-            a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
-            a.download = 'viveiros_caninde.csv';
-            a.click();
-        });
+    document.getElementById('btn-exportar')?.addEventListener('click', () => {
+        const rows = [['Coluna', 'Lote', 'Especie', 'Viveiro', 'Destino']];
+        board.em_preparo.forEach(l => rows.push(['Em Preparo', l.lote, l.especie, l.viveiro, l.destino]));
+        board.prontas.forEach(l => rows.push(['Prontas', l.lote, l.especie, l.viveiro, l.destino]));
+        const csv = rows.map(r => r.join(';')).join('\n');
+        const a = document.createElement('a');
+        a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
+        a.download = 'viveiros_caninde.csv';
+        a.click();
+        toast('CSV exportado com sucesso!');
+    });
 
     document.getElementById('busca-input').addEventListener('input', () => renderBoard());
 
