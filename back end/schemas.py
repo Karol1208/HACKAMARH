@@ -202,3 +202,22 @@ class SolicitacaoResposta(BaseModel):
     criado_em: datetime
 
     model_config = {"from_attributes": True}
+
+# --- Viveiros / Kanban ---
+
+class SemeaduraCriar(BaseModel):
+    especie: str
+    viveiro: str
+    destino: str = "A definir"
+
+class LoteResposta(BaseModel):
+    id: int
+    lote: str
+    especie: str
+    viveiro: str
+    destino: str
+    germinacao_pct: float
+    dias_restantes: int
+    estagio: str
+
+

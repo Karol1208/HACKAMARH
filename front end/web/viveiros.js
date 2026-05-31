@@ -347,16 +347,25 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('busca-input').addEventListener('input', () => renderBoard());
 
-    document.getElementById('form-semeadura').addEventListener('submit', e => {
+    document.getElementById('form-semeadura').addEventListener('submit', async e => {
         e.preventDefault();
         const especie = document.getElementById('s-especie').value;
         const viveiro = document.getElementById('s-viveiro').value;
         const destino = document.getElementById('s-destino').value || 'A definir';
-        const novoLote = { id: Date.now(), lote: String(Math.floor(Math.random() * 900) + 100), especie, viveiro, destino, germinacao_pct: 0, dias_restantes: 90 };
-        board.em_preparo.push(novoLote);
-        renderBoard();
-        fecharModal();
-        toast('Semeadura de ' + especie + ' registrada no Viveiro ' + viveiro);
+        
+        try {
+            await fetch(API + '/viveiros/lotes', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ especie, viveiro, destino })
+            });
+            board = await fetch(API + '/viveiros/board').then(r => r.json());
+            renderBoard();
+            fecharModal();
+            toast('Semeadura de ' + especie + ' registrada no Viveiro ' + viveiro);
+        } catch(err) {
+            toast('Erro ao salvar no servidor', 'erro');
+        }
     });
 
     document.addEventListener('click', e => {
