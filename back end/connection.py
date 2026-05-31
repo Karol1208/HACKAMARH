@@ -10,7 +10,7 @@ class Conexao:
             port=int(os.getenv('DB_PORT', 5432)),
             database=os.getenv('DB_NAME', 'hackamarh'),
             user=os.getenv('DB_USER', 'postgres'),
-            password=os.getenv('DB_PASSWORD', '123456')
+            password=os.getenv('DB_PASSWORD')
         )
 
     def cursor(self):

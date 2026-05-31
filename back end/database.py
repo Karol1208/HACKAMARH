@@ -7,7 +7,9 @@ host = os.getenv('DB_HOST', '127.0.0.1')
 port = os.getenv('DB_PORT', '5432')
 database = os.getenv('DB_NAME', 'hackamarh')
 user = os.getenv('DB_USER', 'postgres')
-password = os.getenv('DB_PASSWORD', '123456') # Mantido seu padrão
+password = os.getenv('DB_PASSWORD')
+if not password:
+    raise RuntimeError("Variável de ambiente DB_PASSWORD não definida. Configure antes de iniciar o servidor.")
 
 # 2. Montar a URL de conexão que o SQLAlchemy e o GeoAlchemy2 precisam
 SQLALCHEMY_DATABASE_URL = f"postgresql://{user}:{password}@{host}:{port}/{database}"

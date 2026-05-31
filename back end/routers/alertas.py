@@ -1,12 +1,12 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File
-from fastapi.middleware.cors import CORSMiddleware
+from io import BytesIO
+from fastapi import APIRouter, Depends, HTTPException, UploadFile, File
+from PIL import Image
 from services.alerta_cidadao import AlertaCidadao
 from schemas import AlertaResposta
-from datetime import datetime
+from connection import Conexao
+from security import verificar_rate_limit
 
 router = APIRouter(prefix="/alertas", tags=["alertas"])
-
-from connection import Conexao
 
 @router.get("/total")
 def total_alertas():
@@ -27,11 +27,16 @@ def listar_alertas():
             return [AlertaResposta(**r) for r in cur.fetchall()]
 
 @router.post("/incendio")
-async def reportar_incendio(imagem: UploadFile = File(...)):
-    if not imagem.content_type.startswith("image/"):
-        raise HTTPException(status_code=400, detail="Arquivo deve ser uma imagem")
-
+async def reportar_incendio(
+    imagem: UploadFile = File(...),
+    _: None = Depends(verificar_rate_limit),
+):
     dados = await imagem.read()
+    try:
+        Image.open(BytesIO(dados)).verify()
+    except Exception:
+        raise HTTPException(status_code=400, detail="Arquivo não é uma imagem válida")
+
     resultado = AlertaCidadao().processar_e_disparar(dados)
 
     if not resultado["sucesso"]:

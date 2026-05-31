@@ -1,6 +1,7 @@
-from fastapi import APIRouter, Query, HTTPException
+from fastapi import APIRouter, Depends, Query, HTTPException
 from schemas import PropriedadeResposta
 from connection import Conexao
+from security import verificar_chave_admin
 
 router = APIRouter(prefix="/propriedades", tags=["propriedades"])
 
@@ -27,20 +28,20 @@ def listar_produtores(status: str = Query(None)):
         return [p for p in produtores if p["status"] == status]
     return produtores
 
-@router.post("/{produtor_id}/certificar")
+@router.post("/{produtor_id}/certificar", dependencies=[Depends(verificar_chave_admin)])
 def certificar(produtor_id: int):
     return {"id": produtor_id, "certificado": True, "mensagem": "Certificado CarbonTO emitido com sucesso"}
 
-@router.post("/{produtor_id}/notificar")
+@router.post("/{produtor_id}/notificar", dependencies=[Depends(verificar_chave_admin)])
 def notificar(produtor_id: int):
     return {"id": produtor_id, "notificado": True, "mensagem": "Notificação enviada ao produtor"}
 
-@router.post("/{produtor_id}/autuar")
+@router.post("/{produtor_id}/autuar", dependencies=[Depends(verificar_chave_admin)])
 def autuar(produtor_id: int):
     return {"id": produtor_id, "autuado": True, "mensagem": "Auto de infração gerado e registrado"}
 
 @router.get("/busca", response_model=list[PropriedadeResposta])
-def buscar(q: str = Query(..., min_length=2, description="Nº CAR ou município")):
+def buscar(q: str = Query(..., min_length=2, max_length=100, description="Nº CAR ou município")):
     resultados = []
     with Conexao() as conn:
         with conn.cursor() as cur:

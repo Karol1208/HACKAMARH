@@ -1,10 +1,12 @@
-from fastapi import APIRouter, HTTPException, status
-from pydantic import EmailStr
-from psycopg2.extras import RealDictCursor
-from connection import Conexao  # Importa a classe do seu arquivo connection.py
-import schemas  # Importa os esquemas de validação do Pydantic
+from fastapi import APIRouter, Depends, HTTPException, status
+from connection import Conexao
+import schemas
+from security import verificar_chave_admin
 
 router = APIRouter(prefix="/users", tags=["users"])
+
+# Mapa explícito: campo do schema → coluna real no banco
+_CAMPO_COLUNA = {'nome': 'nome', 'email': 'email', 'senha': 'senha_hash'}
 
 def get_conexao():
     """Retorna uma nova instância de gerenciamento da conexão com o banco."""
@@ -15,7 +17,7 @@ def get_conexao():
 # 1. ROTAS DE USUÁRIOS (MÓDULO GOV / ADMIN)
 # ==========================================
 
-@router.post("/", response_model=schemas.UsuarioResposta, status_code=status.HTTP_201_CREATED)
+@router.post("/", response_model=schemas.UsuarioResposta, status_code=status.HTTP_201_CREATED, dependencies=[Depends(verificar_chave_admin)])
 def criar_usuario(usuario: schemas.UsuarioCriar):
     with get_conexao() as conn:
         with conn.cursor() as cursor:
@@ -38,7 +40,7 @@ def criar_usuario(usuario: schemas.UsuarioCriar):
             
     return novo_usuario
 
-@router.get("/", response_model=list[schemas.UsuarioResposta])
+@router.get("/", response_model=list[schemas.UsuarioResposta], dependencies=[Depends(verificar_chave_admin)])
 def listar_usuarios():
     with get_conexao() as conn:
         with conn.cursor() as cursor:
@@ -46,7 +48,7 @@ def listar_usuarios():
             usuarios = cursor.fetchall()
     return usuarios
 
-@router.get("/{usuario_id}", response_model=schemas.UsuarioResposta)
+@router.get("/{usuario_id}", response_model=schemas.UsuarioResposta, dependencies=[Depends(verificar_chave_admin)])
 def buscar_usuario(usuario_id: int):
     with get_conexao() as db:
         cur = db.cursor()
@@ -56,16 +58,21 @@ def buscar_usuario(usuario_id: int):
         raise HTTPException(status_code=404, detail="Usuário não encontrado")
     return usuario
 
-@router.patch("/{usuario_id}", response_model=schemas.UsuarioResposta)
+@router.patch("/{usuario_id}", response_model=schemas.UsuarioResposta, dependencies=[Depends(verificar_chave_admin)])
 def atualizar_usuario(usuario_id: int, dados: schemas.UsuarioAtualizar):
     with get_conexao() as db:
         cur = db.cursor()
         cur.execute("SELECT id FROM usuarios WHERE id = %s", (usuario_id,))
         if not cur.fetchone():
             raise HTTPException(status_code=404, detail="Usuário não encontrado")
-        campos = dados.model_dump(exclude_none=True)
+        # Usa whitelist explícita — impede SQL injection via nomes de coluna
+        campos = {
+            _CAMPO_COLUNA[k]: v
+            for k, v in dados.model_dump(exclude_none=True).items()
+            if k in _CAMPO_COLUNA
+        }
         if campos:
-            set_clause = ", ".join(f"{c} = %s" for c in campos)
+            set_clause = ", ".join(f"{col} = %s" for col in campos)
             cur.execute(
                 f"UPDATE usuarios SET {set_clause} WHERE id = %s RETURNING id, nome, email, created_at AS criado_em",
                 (*campos.values(), usuario_id),
@@ -74,7 +81,7 @@ def atualizar_usuario(usuario_id: int, dados: schemas.UsuarioAtualizar):
         cur.execute("SELECT id, nome, email, created_at AS criado_em FROM usuarios WHERE id = %s", (usuario_id,))
         return cur.fetchone()
 
-@router.delete("/{usuario_id}", status_code=204)
+@router.delete("/{usuario_id}", status_code=204, dependencies=[Depends(verificar_chave_admin)])
 def deletar_usuario(usuario_id: int):
     with get_conexao() as db:
         cur = db.cursor()
