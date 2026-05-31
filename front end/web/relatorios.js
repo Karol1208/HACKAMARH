@@ -105,11 +105,29 @@ async function baixarRelatorio(id, titulo) {
     } catch(e) { toast('Erro ao baixar relatório', 'erro'); }
 }
 
+// Exportar PDF — imprime a visão atual da página (KPIs + relatórios carregados)
 function exportarPDF() {
-    toast('Gerando PDF consolidado...');
-    setTimeout(() => {
-        window.print();
-    }, 500);
+    toast('Gerando PDF do relatório atual...');
+    setTimeout(() => window.print(), 500);
+}
+
+// Baixar Dossiê PDF — documento consolidado por zonas gerado pelo servidor
+async function baixarDossiePDF() {
+    toast('Solicitando Dossiê Completo ao servidor...');
+    try {
+        const res = await fetch(API + '/relatorios/dossie');
+        if (!res.ok) throw new Error('status ' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'Dossie_Caninde_' + new Date().getFullYear() + '.pdf';
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('Dossiê baixado com sucesso!');
+    } catch(e) {
+        toast('API offline — dossiê indisponível', 'erro');
+    }
 }
 
 // --- Sidebar ---
@@ -121,11 +139,6 @@ function toggleSidebar() {
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
     lucide.createIcons();
-
-    document.querySelector('button i[data-lucide="download"]')
-        ?.closest('button')
-        ?.addEventListener('click', exportarPDF);
-
     carregarKPIs();
     carregarRelatorios();
 });

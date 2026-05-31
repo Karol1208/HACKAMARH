@@ -1,4 +1,8 @@
+import io
+from datetime import date
 from fastapi import APIRouter
+from fastapi.responses import StreamingResponse
+from fpdf import FPDF
 
 router = APIRouter(prefix="/relatorios", tags=["relatorios"])
 
@@ -8,6 +12,91 @@ _RELATORIOS = [
     {"id": 3, "titulo": "Créditos de Carbono — Anual 2025","descricao": "12.400 tCO₂",        "gerado_em": "31/12/2025", "tipo": "carbono",  "icone": "bar-chart-2","cor": "river"},
     {"id": 4, "titulo": "Infrações Ambientais — Maio 2026","descricao": "8 autos lavrados",   "gerado_em": "29/05/2026", "tipo": "infracoes","icone": "alert-triangle","cor": "fire"},
 ]
+
+_ZONAS = [
+    {"nome": "Bacia do Rio Tocantins (APPs)", "dados": "14.5 MB · 24 Drones Envolvidos"},
+    {"nome": "Parque Estadual do Jalapão",     "dados": "8.2 MB · Imagens de Satélite (Planet)"},
+]
+
+@router.get("/dossie")
+def dossie_completo():
+    kpi = {
+        "area_restaurada_ha": 4280,
+        "co2_sequestrado_t": 12400,
+        "selos_verdes": 452,
+        "creditos_carbono_brl": 2100000,
+    }
+
+    pdf = FPDF()
+    pdf.set_auto_page_break(auto=True, margin=15)
+    pdf.add_page()
+
+    # Cabeçalho
+    pdf.set_fill_color(40, 84, 48)
+    pdf.rect(0, 0, 210, 30, "F")
+    pdf.set_font("Helvetica", "B", 18)
+    pdf.set_text_color(255, 255, 255)
+    pdf.set_xy(10, 8)
+    pdf.cell(0, 10, "Projeto Caninde - SEMARH / TO", ln=True)
+    pdf.set_font("Helvetica", "", 10)
+    pdf.set_xy(10, 20)
+    pdf.cell(0, 6, f"Dossie Completo de Impacto GCF  |  Gerado em {date.today().strftime('%d/%m/%Y')}")
+
+    pdf.set_text_color(30, 30, 30)
+    pdf.ln(20)
+
+    # KPIs
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_fill_color(240, 248, 240)
+    pdf.cell(0, 8, "Indicadores ESG (Ano Base 2026)", ln=True, fill=True)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "", 11)
+    pdf.cell(0, 7, f"  Area Restaurada:     {kpi['area_restaurada_ha']:,} ha".replace(",", "."), ln=True)
+    pdf.cell(0, 7, f"  CO2 Sequestrado:     {kpi['co2_sequestrado_t']:,} t".replace(",", "."), ln=True)
+    pdf.cell(0, 7, f"  Selos Verdes:        {kpi['selos_verdes']:,} produtores elegíveis".replace(",", "."), ln=True)
+    pdf.cell(0, 7, f"  Creditos de Carbono: R$ {kpi['creditos_carbono_brl']/1_000_000:.1f}M", ln=True)
+    pdf.ln(5)
+
+    # Relatórios
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_fill_color(240, 248, 240)
+    pdf.cell(0, 8, "Relatorios Consolidados", ln=True, fill=True)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "", 11)
+    for rel in _RELATORIOS:
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 7, f"  {rel['titulo']}", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 6, f"    {rel['descricao']}  |  Gerado em: {rel['gerado_em']}", ln=True)
+        pdf.ln(1)
+    pdf.ln(4)
+
+    # Zonas de Impacto
+    pdf.set_font("Helvetica", "B", 13)
+    pdf.set_fill_color(240, 248, 240)
+    pdf.cell(0, 8, "Zonas de Impacto Geografico", ln=True, fill=True)
+    pdf.ln(3)
+    pdf.set_font("Helvetica", "", 11)
+    for z in _ZONAS:
+        pdf.set_font("Helvetica", "B", 11)
+        pdf.cell(0, 7, f"  {z['nome']}", ln=True)
+        pdf.set_font("Helvetica", "", 10)
+        pdf.cell(0, 6, f"    {z['dados']}", ln=True)
+        pdf.ln(1)
+
+    # Rodapé
+    pdf.ln(10)
+    pdf.set_font("Helvetica", "I", 9)
+    pdf.set_text_color(120, 120, 120)
+    pdf.cell(0, 6, "Dados auditaveis e criptografados via Blockchain — Projeto Caninde / SEMARH-TO", ln=True, align="C")
+
+    buf = io.BytesIO(pdf.output())
+    filename = f"Dossie_Caninde_{date.today().year}.pdf"
+    return StreamingResponse(
+        buf,
+        media_type="application/pdf",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
 
 @router.get("/kpis")
 def kpis():

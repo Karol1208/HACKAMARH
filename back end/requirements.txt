@@ -7,3 +7,4 @@ httpx
 ultralytics
 geoalchemy2
 shapely
+fpdf2
