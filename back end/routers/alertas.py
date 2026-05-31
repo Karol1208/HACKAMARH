@@ -8,6 +8,17 @@ router = APIRouter(prefix="/alertas", tags=["alertas"])
 
 from connection import Conexao
 
+@router.get("/total")
+def total_alertas():
+    try:
+        with Conexao() as conn:
+            with conn.cursor() as cur:
+                cur.execute("SELECT COUNT(*) AS total FROM alertas_sistema")
+                row = cur.fetchone()
+                return {"total": row["total"]}
+    except Exception:
+        return {"total": 0}
+
 @router.get("/", response_model=list[AlertaResposta])
 def listar_alertas():
     with Conexao() as conn:
