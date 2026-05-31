@@ -1,6 +1,7 @@
 import io
 from datetime import date
-from fastapi import APIRouter
+from typing import Optional
+from fastapi import APIRouter, Query
 from fastapi.responses import StreamingResponse
 from fpdf import FPDF
 
@@ -14,12 +15,13 @@ _RELATORIOS = [
 ]
 
 _ZONAS = [
-    {"nome": "Bacia do Rio Tocantins (APPs)", "dados": "14.5 MB · 24 Drones Envolvidos"},
-    {"nome": "Parque Estadual do Jalapão",     "dados": "8.2 MB · Imagens de Satélite (Planet)"},
+    {"slug": "tocantins", "nome": "Bacia do Rio Tocantins (APPs)", "dados": "14.5 MB · 24 Drones Envolvidos"},
+    {"slug": "jalapao",   "nome": "Parque Estadual do Jalapão",    "dados": "8.2 MB · Imagens de Satélite (Planet)"},
 ]
 
 @router.get("/dossie")
-def dossie_completo():
+def dossie_completo(zona: Optional[str] = Query(None, description="Slug da zona: 'tocantins' ou 'jalapao'")):
+    zona_filtro = next((z for z in _ZONAS if z["slug"] == zona), None) if zona else None
     kpi = {
         "area_restaurada_ha": 4280,
         "co2_sequestrado_t": 12400,
@@ -40,7 +42,8 @@ def dossie_completo():
     pdf.cell(0, 10, "Projeto Caninde - SEMARH / TO", ln=True)
     pdf.set_font("Helvetica", "", 10)
     pdf.set_xy(10, 20)
-    pdf.cell(0, 6, f"Dossie Completo de Impacto GCF  |  Gerado em {date.today().strftime('%d/%m/%Y')}")
+    subtitulo = f"Dossie: {zona_filtro['nome']}" if zona_filtro else "Dossie Completo de Impacto GCF"
+    pdf.cell(0, 6, f"{subtitulo}  |  Gerado em {date.today().strftime('%d/%m/%Y')}")
 
     pdf.set_text_color(30, 30, 30)
     pdf.ln(20)
@@ -77,7 +80,8 @@ def dossie_completo():
     pdf.cell(0, 8, "Zonas de Impacto Geografico", ln=True, fill=True)
     pdf.ln(3)
     pdf.set_font("Helvetica", "", 11)
-    for z in _ZONAS:
+    zonas_exibir = [zona_filtro] if zona_filtro else _ZONAS
+    for z in zonas_exibir:
         pdf.set_font("Helvetica", "B", 11)
         pdf.cell(0, 7, f"  {z['nome']}", ln=True)
         pdf.set_font("Helvetica", "", 10)
@@ -91,7 +95,8 @@ def dossie_completo():
     pdf.cell(0, 6, "Dados auditaveis e criptografados via Blockchain — Projeto Caninde / SEMARH-TO", ln=True, align="C")
 
     buf = io.BytesIO(pdf.output())
-    filename = f"Dossie_Caninde_{date.today().year}.pdf"
+    slug_nome = f"_{zona_filtro['slug']}" if zona_filtro else ""
+    filename = f"Dossie_Caninde{slug_nome}_{date.today().year}.pdf"
     return StreamingResponse(
         buf,
         media_type="application/pdf",

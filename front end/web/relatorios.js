@@ -105,6 +105,48 @@ async function baixarRelatorio(id, titulo) {
     } catch(e) { toast('Erro ao baixar relatório', 'erro'); }
 }
 
+// CSV — exporta KPIs + lista de relatórios em um arquivo .csv
+async function exportarCSV() {
+    toast('Gerando CSV...');
+    try {
+        const [kpis, relatorios] = await Promise.all([
+            fetch(API + '/relatorios/kpis').then(r => r.json()),
+            fetch(API + '/relatorios/').then(r => r.json()),
+        ]);
+        const linhas = [
+            ['Secao', 'Campo', 'Valor'],
+            ['KPIs', 'Area Restaurada (ha)', kpis.area_restaurada_ha],
+            ['KPIs', 'CO2 Sequestrado (t)', kpis.co2_sequestrado_t],
+            ['KPIs', 'Selos Verdes', kpis.selos_verdes],
+            ['KPIs', 'Creditos de Carbono (BRL)', kpis.creditos_carbono_brl],
+            ...relatorios.map(r => ['Relatorio', r.titulo, r.descricao + ' | Gerado em: ' + r.gerado_em]),
+        ];
+        const csv = linhas.map(r => r.join(';')).join('\n');
+        const a = document.createElement('a');
+        a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent('﻿' + csv);
+        a.download = `Caninde_ESG_${new Date().getFullYear()}.csv`;
+        a.click();
+        toast('CSV exportado com sucesso!');
+    } catch(e) { toast('Erro ao exportar CSV', 'erro'); }
+}
+
+// Baixar Dossiê por zona específica
+async function baixarDossieZona(zona) {
+    toast('Gerando dossiê da zona...');
+    try {
+        const res = await fetch(`${API}/relatorios/dossie?zona=${zona}`);
+        if (!res.ok) throw new Error('status ' + res.status);
+        const blob = await res.blob();
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = `Dossie_Caninde_${zona}_${new Date().getFullYear()}.pdf`;
+        a.click();
+        URL.revokeObjectURL(url);
+        toast('Dossiê baixado com sucesso!');
+    } catch(e) { toast('API offline — dossiê indisponível', 'erro'); }
+}
+
 // Exportar PDF — imprime a visão atual da página (KPIs + relatórios carregados)
 function exportarPDF() {
     toast('Gerando PDF do relatório atual...');

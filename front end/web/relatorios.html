@@ -88,7 +88,7 @@
                 </div>
             </div>
             <div class="hidden sm:flex gap-2">
-                <button class="bg-white border border-gray-200 text-gray-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
+                <button onclick="exportarCSV()" class="bg-white border border-gray-200 text-gray-700 text-sm font-bold px-4 py-2.5 rounded-xl hover:bg-gray-50 transition shadow-sm flex items-center gap-2">
                     <i data-lucide="file-spreadsheet" class="w-4 h-4 text-green-600"></i> CSV
                 </button>
                 <button class="bg-brand-river hover:bg-blue-700 text-white text-sm font-bold px-4 py-2.5 rounded-xl transition shadow-sm flex items-center gap-2" onclick="exportarPDF()">
@@ -261,7 +261,7 @@
                                 <p class="text-[11px] text-gray-500 font-mono mt-0.5">Volume de Dados: 14.5 MB • 24 Drones Envolvidos</p>
                             </div>
                         </div>
-                        <button class="text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-lg transition shadow-sm w-full sm:w-auto">Baixar Dossiê (.PDF)</button>
+                        <button onclick="baixarDossieZona('tocantins')" class="text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-lg transition shadow-sm w-full sm:w-auto">Baixar Dossiê (.PDF)</button>
                     </div>
                     <div class="p-4 px-6 flex flex-col sm:flex-row justify-between sm:items-center gap-4 hover:bg-brand-river/5 transition group">
                         <div class="flex items-center gap-4">
@@ -271,7 +271,7 @@
                                 <p class="text-[11px] text-gray-500 font-mono mt-0.5">Volume de Dados: 8.2 MB • Imagens de Satélite (Planet)</p>
                             </div>
                         </div>
-                        <button class="text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-lg transition shadow-sm w-full sm:w-auto">Baixar Dossiê (.PDF)</button>
+                        <button onclick="baixarDossieZona('jalapao')" class="text-xs font-bold text-gray-600 bg-white border border-gray-200 hover:bg-gray-50 px-4 py-2 rounded-lg transition shadow-sm w-full sm:w-auto">Baixar Dossiê (.PDF)</button>
                     </div>
                 </div>
             </div>
