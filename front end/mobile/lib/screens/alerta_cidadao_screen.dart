@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import 'package:geolocator/geolocator.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
@@ -13,6 +13,9 @@ class AlertaCidadaoScreen extends StatefulWidget {
 }
 
 class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
+  CameraController? _controller;
+  bool _cameraReady = false;
+
   XFile? _imagem;
   Uint8List? _imagemBytes;
   Position? _posicao;
@@ -23,6 +26,27 @@ class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
   void initState() {
     super.initState();
     _obterLocalizacao();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      _controller = CameraController(
+        cameras.first,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      await _controller!.initialize();
+      if (mounted) setState(() => _cameraReady = true);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
   }
 
   Future<void> _obterLocalizacao() async {
@@ -41,14 +65,15 @@ class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
   }
 
   Future<void> _capturarFoto() async {
-    final foto = await ImagePicker().pickImage(
-        source: ImageSource.camera, imageQuality: 85);
-    if (foto == null) return;
-    final bytes = await foto.readAsBytes();
-    setState(() {
-      _imagem = foto;
-      _imagemBytes = bytes;
-    });
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    try {
+      final foto = await _controller!.takePicture();
+      final bytes = await foto.readAsBytes();
+      setState(() {
+        _imagem = foto;
+        _imagemBytes = bytes;
+      });
+    } catch (_) {}
   }
 
   Future<void> _enviar() async {
@@ -84,6 +109,9 @@ class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
     if (_imagemBytes != null) {
       return Image.memory(_imagemBytes!, fit: BoxFit.cover);
     }
+    if (_cameraReady && _controller != null) {
+      return CameraPreview(_controller!);
+    }
     return Container(
       decoration: const BoxDecoration(
         gradient: LinearGradient(
@@ -105,7 +133,6 @@ class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
         height: s,
         child: Stack(
           children: [
-            // Cantos
             Positioned(top: 0, left: 0, child: _corner(top: true, left: true, c: c, w: w)),
             Positioned(top: 0, right: 0, child: _corner(top: true, left: false, c: c, w: w)),
             Positioned(bottom: 0, left: 0, child: _corner(top: false, left: true, c: c, w: w)),
@@ -197,7 +224,6 @@ class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
         child: Column(
           mainAxisSize: MainAxisSize.min,
           children: [
-            // GPS chip
             Container(
               padding: const EdgeInsets.all(12),
               decoration: BoxDecoration(

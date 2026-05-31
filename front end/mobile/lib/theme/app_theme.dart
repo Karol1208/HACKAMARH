@@ -5,7 +5,6 @@ class AppColors {
   static const river   = Color(0xFF0077B6);
   static const jalapao = Color(0xFFD4A017);
   static const fire    = Color(0xFFD62828);
-  static const earth   = Color(0xFFF1E9D2);
   static const bg      = Color(0xFFF8F9FA);
   static const text    = Color(0xFF2D3748);
 }

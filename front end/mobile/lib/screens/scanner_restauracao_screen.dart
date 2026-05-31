@@ -1,6 +1,6 @@
 import 'dart:typed_data';
 import 'package:flutter/material.dart';
-import 'package:image_picker/image_picker.dart';
+import 'package:camera/camera.dart';
 import '../theme/app_theme.dart';
 import '../services/api_service.dart';
 
@@ -13,6 +13,9 @@ class ScannerRestauracaoScreen extends StatefulWidget {
 }
 
 class _ScannerRestauracaoScreenState extends State<ScannerRestauracaoScreen> {
+  CameraController? _controller;
+  bool _cameraReady = false;
+
   XFile? _imagem;
   Uint8List? _imagemBytes;
   bool _analisando = false;
@@ -29,17 +32,44 @@ class _ScannerRestauracaoScreenState extends State<ScannerRestauracaoScreen> {
     'Caryocar brasiliense (Pequi)',
   ];
 
+  @override
+  void initState() {
+    super.initState();
+    _initCamera();
+  }
+
+  Future<void> _initCamera() async {
+    try {
+      final cameras = await availableCameras();
+      if (cameras.isEmpty) return;
+      _controller = CameraController(
+        cameras.first,
+        ResolutionPreset.high,
+        enableAudio: false,
+      );
+      await _controller!.initialize();
+      if (mounted) setState(() => _cameraReady = true);
+    } catch (_) {}
+  }
+
+  @override
+  void dispose() {
+    _controller?.dispose();
+    super.dispose();
+  }
+
   Future<void> _capturarFoto() async {
-    final foto = await ImagePicker()
-        .pickImage(source: ImageSource.camera, imageQuality: 90);
-    if (foto == null) return;
-    final bytes = await foto.readAsBytes();
-    setState(() {
-      _imagem = foto;
-      _imagemBytes = bytes;
-      _concluido = false;
-      _resultado = null;
-    });
+    if (_controller == null || !_controller!.value.isInitialized) return;
+    try {
+      final foto = await _controller!.takePicture();
+      final bytes = await foto.readAsBytes();
+      setState(() {
+        _imagem = foto;
+        _imagemBytes = bytes;
+        _concluido = false;
+        _resultado = null;
+      });
+    } catch (_) {}
   }
 
   Future<void> _salvarSincronizar() async {
@@ -88,6 +118,9 @@ class _ScannerRestauracaoScreenState extends State<ScannerRestauracaoScreen> {
   Widget _buildCameraBackground() {
     if (_imagemBytes != null) {
       return Image.memory(_imagemBytes!, fit: BoxFit.cover);
+    }
+    if (_cameraReady && _controller != null) {
+      return CameraPreview(_controller!);
     }
     return Container(
       decoration: const BoxDecoration(
@@ -256,7 +289,6 @@ class _ScannerRestauracaoScreenState extends State<ScannerRestauracaoScreen> {
                     fontWeight: FontWeight.w800,
                     color: AppColors.text)),
             const SizedBox(height: 14),
-            // Dropdown espécie
             GestureDetector(
               onTap: () => setState(() => _dropdownOpen = !_dropdownOpen),
               child: Container(
@@ -325,7 +357,6 @@ class _ScannerRestauracaoScreenState extends State<ScannerRestauracaoScreen> {
                 ),
               ),
             const SizedBox(height: 12),
-            // Health buttons
             Row(
               children: [
                 _healthBtn('saudavel', 'Saudável', AppColors.cerrado),
