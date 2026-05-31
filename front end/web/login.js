@@ -23,6 +23,15 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         await new Promise(r => setTimeout(r, 800));
+
+        // Deriva nome de exibição a partir da credencial
+        let nome = credencial;
+        if (credencial.includes('@')) {
+            nome = credencial.split('@')[0].replace(/[._]/g, ' ');
+        }
+        nome = nome.replace(/\b\w/g, c => c.toUpperCase());
+
+        localStorage.setItem('caninde_user', JSON.stringify({ credencial, nome }));
         window.location.href = 'dashboard.html';
     });
 });
