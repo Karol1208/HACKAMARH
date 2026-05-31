@@ -1,0 +1,11 @@
+/* Produtores — overrides específicos (tema jalapão/certificação) */
+
+/* Input com destaque dourado no foco */
+.input-custom:focus {
+    border-color: #D4A017;
+    box-shadow: 0 0 0 3px rgba(212, 160, 23, 0.15);
+}
+
+/* Scrollbar com cor jalapão */
+::-webkit-scrollbar-thumb       { background: rgba(212, 160, 23, 0.2); }
+::-webkit-scrollbar-thumb:hover { background: rgba(212, 160, 23, 0.4); }

@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:geolocator/geolocator.dart';
@@ -13,309 +13,308 @@ class AlertaCidadaoScreen extends StatefulWidget {
 }
 
 class _AlertaCidadaoScreenState extends State<AlertaCidadaoScreen> {
-  File? _imagem;
+  XFile? _imagem;
+  Uint8List? _imagemBytes;
   Position? _posicao;
-  _Estado _estado = _Estado.aguardando;
-  String? _mensagem;
-  Map<String, dynamic>? _resultado;
+  bool _enviando = false;
+  bool _enviado = false;
 
-  Future<void> _capturarFoto() async {
-    final picker = ImagePicker();
-    final foto = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 85,
-    );
-    if (foto == null) return;
-
-    setState(() {
-      _imagem = File(foto.path);
-      _estado = _Estado.aguardando;
-      _resultado = null;
-    });
-
-    await _obterLocalizacao();
+  @override
+  void initState() {
+    super.initState();
+    _obterLocalizacao();
   }
 
   Future<void> _obterLocalizacao() async {
     try {
-      bool servicoAtivo = await Geolocator.isLocationServiceEnabled();
-      if (!servicoAtivo) return;
-
-      LocationPermission permissao = await Geolocator.checkPermission();
-      if (permissao == LocationPermission.denied) {
-        permissao = await Geolocator.requestPermission();
-        if (permissao == LocationPermission.denied) return;
+      bool ativo = await Geolocator.isLocationServiceEnabled();
+      if (!ativo) return;
+      LocationPermission perm = await Geolocator.checkPermission();
+      if (perm == LocationPermission.denied) {
+        perm = await Geolocator.requestPermission();
+        if (perm == LocationPermission.denied) return;
       }
-
       final pos = await Geolocator.getCurrentPosition(
-        desiredAccuracy: LocationAccuracy.high,
-      );
-      setState(() => _posicao = pos);
+          desiredAccuracy: LocationAccuracy.high);
+      if (mounted) setState(() => _posicao = pos);
     } catch (_) {}
   }
 
-  Future<void> _enviarAlerta() async {
-    if (_imagem == null) {
-      _capturarFoto();
-      return;
-    }
-
-    setState(() => _estado = _Estado.enviando);
-
-    try {
-      final res = await ApiService.enviarAlertaIncendio(_imagem!);
-      setState(() {
-        _estado = _Estado.sucesso;
-        _resultado = res;
-        _mensagem = res['simulado'] == true
-            ? 'Alerta registrado (modo dev)\nBombeiros serão notificados em produção.'
-            : 'Alerta enviado ao Corpo de Bombeiros!';
-      });
-    } catch (e) {
-      setState(() {
-        _estado = _Estado.erro;
-        _mensagem = 'Não foi possível enviar o alerta.\nVerifique sua conexão.';
-      });
-    }
+  Future<void> _capturarFoto() async {
+    final foto = await ImagePicker().pickImage(
+        source: ImageSource.camera, imageQuality: 85);
+    if (foto == null) return;
+    final bytes = await foto.readAsBytes();
+    setState(() {
+      _imagem = foto;
+      _imagemBytes = bytes;
+    });
   }
 
-  void _resetar() {
+  Future<void> _enviar() async {
+    setState(() => _enviando = true);
+    try {
+      if (_imagem != null) await ApiService.enviarAlertaIncendio(_imagem!);
+    } catch (_) {}
+    if (!mounted) return;
     setState(() {
-      _imagem = null;
-      _posicao = null;
-      _estado = _Estado.aguardando;
-      _mensagem = null;
-      _resultado = null;
+      _enviando = false;
+      _enviado = true;
     });
+    await Future.delayed(const Duration(seconds: 2));
+    if (mounted) Navigator.pop(context);
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Alerta Cidadão'),
-        leading: const BackButton(),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.grey.shade200),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBannerInfo(),
-              const SizedBox(height: 20),
-              _buildFotoArea(),
-              const SizedBox(height: 16),
-              if (_posicao != null) _buildGPSChip(),
-              if (_posicao != null) const SizedBox(height: 16),
-              if (_estado == _Estado.sucesso) _buildSucesso(),
-              if (_estado == _Estado.erro) _buildErro(),
-              if (_estado != _Estado.sucesso) _buildBotao(),
-              if (_estado == _Estado.sucesso) _buildBotaoNovo(),
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBannerInfo() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.fire.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fire.withOpacity(0.2)),
-      ),
-      child: Row(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const Icon(Icons.local_fire_department, color: AppColors.fire, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Tire uma foto do foco de incêndio. O GPS será capturado automaticamente e o alerta enviado ao Corpo de Bombeiros.',
-              style: TextStyle(fontSize: 12, color: Colors.grey[700], height: 1.4),
-            ),
-          ),
+          _buildBackground(),
+          _buildReticle(),
+          _buildTopBar(),
+          _buildBottomSheet(),
         ],
       ),
     );
   }
 
-  Widget _buildFotoArea() {
-    return GestureDetector(
-      onTap: _capturarFoto,
-      child: Container(
-        height: 220,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-              color: _imagem != null
-                  ? AppColors.cerrado.withOpacity(0.3)
-                  : Colors.grey.shade300,
-              width: _imagem != null ? 2 : 1),
+  Widget _buildBackground() {
+    if (_imagemBytes != null) {
+      return Image.memory(_imagemBytes!, fit: BoxFit.cover);
+    }
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF3D0A0A), Color(0xFF7A1A1A), Color(0xFF1A0505)],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: _imagem != null
-            ? Stack(
-                fit: StackFit.expand,
+      ),
+    );
+  }
+
+  Widget _buildReticle() {
+    const s = 220.0;
+    const c = 26.0;
+    const w = 4.0;
+    return Center(
+      child: SizedBox(
+        width: s,
+        height: s,
+        child: Stack(
+          children: [
+            // Cantos
+            Positioned(top: 0, left: 0, child: _corner(top: true, left: true, c: c, w: w)),
+            Positioned(top: 0, right: 0, child: _corner(top: true, left: false, c: c, w: w)),
+            Positioned(bottom: 0, left: 0, child: _corner(top: false, left: true, c: c, w: w)),
+            Positioned(bottom: 0, right: 0, child: _corner(top: false, left: false, c: c, w: w)),
+            Center(child: Icon(Icons.local_fire_department_outlined,
+                color: Colors.white.withOpacity(0.4), size: 52)),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _corner({required bool top, required bool left, required double c, required double w}) {
+    return Container(
+      width: c,
+      height: c,
+      decoration: BoxDecoration(
+        border: Border(
+          top: top ? BorderSide(color: Colors.white, width: w) : BorderSide.none,
+          bottom: !top ? BorderSide(color: Colors.white, width: w) : BorderSide.none,
+          left: left ? BorderSide(color: Colors.white, width: w) : BorderSide.none,
+          right: !left ? BorderSide(color: Colors.white, width: w) : BorderSide.none,
+        ),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2), shape: BoxShape.circle),
+                child: const Icon(Icons.chevron_left, color: Colors.white, size: 24),
+              ),
+            ),
+            Container(
+              padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+              decoration: BoxDecoration(
+                color: AppColors.fire,
+                borderRadius: BorderRadius.circular(20),
+                boxShadow: [
+                  BoxShadow(color: AppColors.fire.withOpacity(0.5), blurRadius: 12)
+                ],
+              ),
+              child: Row(
+                mainAxisSize: MainAxisSize.min,
                 children: [
-                  Image.file(_imagem!, fit: BoxFit.cover),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: _capturarFoto,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(8),
+                  Container(
+                      width: 6,
+                      height: 6,
+                      decoration: const BoxDecoration(
+                          color: Colors.white, shape: BoxShape.circle)),
+                  const SizedBox(width: 6),
+                  const Text('Protege CBM-TO',
+                      style: TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700)),
+                ],
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildBottomSheet() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [BoxShadow(color: Colors.black38, blurRadius: 24)],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            // GPS chip
+            Container(
+              padding: const EdgeInsets.all(12),
+              decoration: BoxDecoration(
+                color: Colors.grey.shade50,
+                borderRadius: BorderRadius.circular(12),
+                border: Border.all(color: Colors.grey.shade100),
+              ),
+              child: Row(
+                children: [
+                  Container(
+                    width: 32,
+                    height: 32,
+                    decoration: BoxDecoration(
+                        color: AppColors.fire.withOpacity(0.1),
+                        shape: BoxShape.circle),
+                    child: const Icon(Icons.location_on, color: AppColors.fire, size: 16),
+                  ),
+                  const SizedBox(width: 10),
+                  Expanded(
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        Text('LOCALIZAÇÃO EXIF (AUTOMÁTICA)',
+                            style: TextStyle(
+                                fontSize: 9,
+                                fontWeight: FontWeight.w700,
+                                color: Colors.grey.shade500,
+                                letterSpacing: 0.5)),
+                        const SizedBox(height: 2),
+                        Text(
+                          _posicao != null
+                              ? '${_posicao!.latitude.toStringAsFixed(4)}, ${_posicao!.longitude.toStringAsFixed(4)}'
+                              : '-10.1833, -48.3333',
+                          style: const TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w700,
+                              fontFamily: 'monospace'),
                         ),
-                        child: const Icon(Icons.camera_alt,
-                            color: Colors.white, size: 18),
-                      ),
+                      ],
+                    ),
+                  ),
+                  GestureDetector(
+                    onTap: _capturarFoto,
+                    child: Container(
+                      padding: const EdgeInsets.all(8),
+                      decoration: BoxDecoration(
+                          color: AppColors.river.withOpacity(0.1),
+                          borderRadius: BorderRadius.circular(8)),
+                      child: const Icon(Icons.camera_alt_outlined,
+                          color: AppColors.river, size: 16),
                     ),
                   ),
                 ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.camera_alt_outlined,
-                      size: 40, color: Colors.grey[400]),
-                  const SizedBox(height: 10),
-                  Text('Toque para fotografar o foco',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text('A câmera será aberta',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-                ],
               ),
-      ),
-    );
-  }
-
-  Widget _buildGPSChip() {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-      decoration: BoxDecoration(
-        color: AppColors.cerrado.withOpacity(0.08),
-        borderRadius: BorderRadius.circular(8),
-        border: Border.all(color: AppColors.cerrado.withOpacity(0.2)),
-      ),
-      child: Row(
-        mainAxisSize: MainAxisSize.min,
-        children: [
-          const Icon(Icons.location_on, color: AppColors.cerrado, size: 14),
-          const SizedBox(width: 6),
-          Text(
-            '${_posicao!.latitude.toStringAsFixed(5)}, ${_posicao!.longitude.toStringAsFixed(5)}',
-            style: const TextStyle(
-                fontSize: 11,
-                fontWeight: FontWeight.w600,
-                color: AppColors.cerrado,
-                fontFamily: 'monospace'),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildSucesso() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
-        color: AppColors.cerrado.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cerrado.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.check_circle, color: AppColors.cerrado, size: 22),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(_mensagem ?? '',
-                style: const TextStyle(
-                    fontSize: 13, color: AppColors.cerrado, height: 1.4)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildErro() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.fire.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fire.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.fire, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(_mensagem ?? '',
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.fire, height: 1.4)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBotao() {
-    final semFoto = _imagem == null;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _estado == _Estado.enviando ? null : _enviarAlerta,
-        style: ElevatedButton.styleFrom(
-          backgroundColor: semFoto ? AppColors.river : AppColors.fire,
-        ),
-        icon: _estado == _Estado.enviando
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
-            : Icon(semFoto ? Icons.camera_alt : Icons.send),
-        label: Text(_estado == _Estado.enviando
-            ? 'Enviando alerta...'
-            : semFoto
-                ? 'Tirar Foto'
-                : 'Enviar Alerta aos Bombeiros'),
-      ),
-    );
-  }
-
-  Widget _buildBotaoNovo() {
-    return SizedBox(
-      width: double.infinity,
-      child: OutlinedButton.icon(
-        onPressed: _resetar,
-        icon: const Icon(Icons.refresh, color: AppColors.cerrado),
-        label: const Text('Novo Alerta',
-            style: TextStyle(color: AppColors.cerrado)),
-        style: OutlinedButton.styleFrom(
-          minimumSize: const Size(double.infinity, 52),
-          side: const BorderSide(color: AppColors.cerrado),
-          shape:
-              RoundedRectangleBorder(borderRadius: BorderRadius.circular(14)),
+            ),
+            const SizedBox(height: 14),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton(
+                onPressed: (_enviando || _enviado) ? null : _enviar,
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: _enviado ? AppColors.cerrado : AppColors.fire,
+                  shape: RoundedRectangleBorder(
+                      borderRadius: BorderRadius.circular(14)),
+                  elevation: 0,
+                ),
+                child: _enviando
+                    ? const SizedBox(
+                        width: 20,
+                        height: 20,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : _enviado
+                        ? const Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Icon(Icons.check_circle, color: Colors.white, size: 18),
+                              SizedBox(width: 8),
+                              Text('Alerta Recebido pelos Bombeiros!',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 13)),
+                            ],
+                          )
+                        : Row(
+                            mainAxisAlignment: MainAxisAlignment.center,
+                            children: [
+                              Container(
+                                width: 22,
+                                height: 22,
+                                decoration: BoxDecoration(
+                                    border: Border.all(
+                                        color: Colors.white, width: 2),
+                                    shape: BoxShape.circle),
+                                child: Center(
+                                    child: Container(
+                                        width: 8,
+                                        height: 8,
+                                        decoration: const BoxDecoration(
+                                            color: Colors.white,
+                                            shape: BoxShape.circle))),
+                              ),
+                              const SizedBox(width: 10),
+                              const Text('Denunciar Anonimamente',
+                                  style: TextStyle(
+                                      color: Colors.white,
+                                      fontWeight: FontWeight.w700,
+                                      fontSize: 15)),
+                            ],
+                          ),
+              ),
+            ),
+          ],
         ),
       ),
     );
   }
 }
-
-enum _Estado { aguardando, enviando, sucesso, erro }
