@@ -21,6 +21,16 @@ app = FastAPI(title="HACKAMARH API", lifespan=lifespan)
 MAX_UPLOAD_BYTES = 10 * 1024 * 1024  # 10 MB
 
 @app.middleware("http")
+async def security_headers(request: Request, call_next):
+    response = await call_next(request)
+    response.headers["X-Content-Type-Options"] = "nosniff"
+    response.headers["X-Frame-Options"] = "DENY"
+    response.headers["X-XSS-Protection"] = "1; mode=block"
+    response.headers["Referrer-Policy"] = "strict-origin-when-cross-origin"
+    response.headers["Permissions-Policy"] = "geolocation=(), camera=(), microphone=()"
+    return response
+
+@app.middleware("http")
 async def limit_upload_size(request: Request, call_next):
     if request.method in ("POST", "PUT", "PATCH"):
         content_length = request.headers.get("content-length")

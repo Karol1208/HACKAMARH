@@ -34,4 +34,3 @@ def get_db():
     finally:
         db.close()
 
-print("Estrutura do SQLAlchemy carregada com sucesso!")

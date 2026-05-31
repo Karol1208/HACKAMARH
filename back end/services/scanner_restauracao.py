@@ -1,4 +1,8 @@
+import hashlib
+import logging
+import os
 from io import BytesIO
+from pathlib import Path
 
 from PIL import Image
 
@@ -7,6 +11,8 @@ try:
     _YOLO_DISPONIVEL = True
 except ImportError:
     _YOLO_DISPONIVEL = False
+
+logger = logging.getLogger(__name__)
 
 
 class ScannerRestauracao:
@@ -18,12 +24,29 @@ class ScannerRestauracao:
     def inicializar(cls, caminho_modelo: str = "yolov8n.pt") -> None:
         """Deve ser chamado uma vez na inicialização da API."""
         if not _YOLO_DISPONIVEL:
-            return  # fallback mock ativo; sem ultralytics instalado
+            return
         if cls._modelo is None:
             try:
+                cls._verificar_integridade(caminho_modelo)
                 cls._modelo = YOLO(caminho_modelo)
-            except Exception:
-                pass  # modelo não disponível; fallback mock ativo
+            except Exception as e:
+                logger.warning("Scanner indisponível — fallback mock ativo: %s", e)
+
+    @staticmethod
+    def _verificar_integridade(caminho_modelo: str) -> None:
+        """Compara SHA-256 do arquivo com YOLO_MODEL_SHA256. Ignorado se env não definida."""
+        sha256_esperado = os.getenv("YOLO_MODEL_SHA256", "").strip().lower()
+        if not sha256_esperado:
+            return  # verificação opcional — defina YOLO_MODEL_SHA256 em produção
+        arquivo = Path(caminho_modelo)
+        if not arquivo.exists():
+            raise FileNotFoundError(f"Modelo não encontrado: {caminho_modelo}")
+        sha256_real = hashlib.sha256(arquivo.read_bytes()).hexdigest()
+        if sha256_real != sha256_esperado:
+            raise RuntimeError(
+                f"Integridade do modelo comprometida — hash divergente. "
+                f"Esperado: {sha256_esperado[:16]}... Real: {sha256_real[:16]}..."
+            )
 
     def analisar(self, dados_imagem: bytes) -> dict:
         if self._modelo is None:
