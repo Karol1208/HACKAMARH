@@ -1,6 +1,8 @@
-from pydantic import BaseModel, EmailStr, field_validator
+from pydantic import BaseModel, EmailStr, Field, field_validator
 from datetime import datetime
-from typing import Literal
+from typing import Literal, List, Optional
+
+# --- Usuários Internos e Governamentais ---
 
 class UsuarioBase(BaseModel):
     nome: str
@@ -18,8 +20,31 @@ class UsuarioResposta(UsuarioBase):
     id: int
     criado_em: datetime
 
-    class Config:
-        from_attributes = True
+    model_config = {"from_attributes": True}
+
+
+# --- App Canindé: Produtores Rurais ---
+
+class UsuarioProdutorBase(BaseModel):
+    nome: str
+    numero_car: str
+    device_token: str | None = None
+
+class UsuarioProdutorCriar(UsuarioProdutorBase):
+    id: str  # ID vindo do Firebase Auth no Flutter
+
+class UsuarioProdutorAtualizar(BaseModel):
+    nome: str | None = None
+    numero_car: str | None = None
+    status_prad: Literal["em_dia", "atrasado"] | None = None
+    device_token: str | None = None
+
+class UsuarioProdutorResposta(UsuarioProdutorBase):
+    id: str
+    status_prad: Literal["em_dia", "atrasado"]
+    created_at: datetime
+
+    model_config = {"from_attributes": True}
 
 
 # --- Dashboard ---
@@ -60,6 +85,26 @@ class AlertaResposta(BaseModel):
     criado_em: datetime
 
 
+# --- Alertas Cidadão (RN01) ---
+
+class AlertaCidadaoCriar(BaseModel):
+    usuario_id: str = "anonimo"
+    latitude: float
+    longitude: float
+    exatidao_gps: float
+    url_foto: str
+
+class AlertaCidadaoResposta(BaseModel):
+    id_alerta: str
+    usuario_id: str
+    exatidao_gps: float | None
+    url_foto: str
+    timestamp_captura: datetime
+    status_webhook: bool
+
+    model_config = {"from_attributes": True}
+
+
 # --- Propriedades ---
 
 class PropriedadeResposta(BaseModel):
@@ -67,6 +112,55 @@ class PropriedadeResposta(BaseModel):
     municipio: str
     produtor: str
     porte: Literal["P", "M", "G"]
+
+
+# --- Reservas Viveiro (RN05) ---
+
+class ReservaViveiroCriar(BaseModel):
+    id_reserva: str  # Código alfa-numérico do QR Code
+    produtor_id: str
+    especie_id: str
+    viveiro_origem: str
+    quantidade: int
+
+class ReservaViveiroAtualizarStatus(BaseModel):
+    status: Literal["reservado", "retirado", "cancelado"]
+
+class ReservaViveiroResposta(BaseModel):
+    id_reserva: str
+    produtor_id: str
+    especie_id: str
+    viveiro_origem: str
+    quantidade: int
+    status: Literal["reservado", "retirado", "cancelado"]
+    data_solicitacao: datetime
+
+    model_config = {"from_attributes": True}
+
+
+# --- Leituras PRAD (RN04) ---
+
+class LeituraPRADCriar(BaseModel):
+    produtor_id: str
+    especie_id: str
+    altura_estimada_cm: float
+    saude_muda: Literal["saudavel", "doente", "morta"]
+    url_foto_comprobatoria: str
+    latitude: float
+    longitude: float
+    sincronizado: bool = True
+
+class LeituraPRADResposta(BaseModel):
+    id_leitura: str
+    produtor_id: str
+    especie_id: str
+    altura_estimada_cm: float
+    saude_muda: Literal["saudavel", "doente", "morta"]
+    url_foto_comprobatoria: str
+    sincronizado: bool
+    timestamp_leitura: datetime
+
+    model_config = {"from_attributes": True}
 
 
 # --- Notificações ---
@@ -106,3 +200,5 @@ class SolicitacaoResposta(BaseModel):
     matricula: str
     status: StatusSolicitacao
     criado_em: datetime
+
+    model_config = {"from_attributes": True}
