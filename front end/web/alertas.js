@@ -1,5 +1,3 @@
-const API = 'http://127.0.0.1:8000';
-
 let todosAlertas = [];
 let filtroRisco = 'Todos os Riscos';
 let filtroPorte = 'Qualquer Porte';
@@ -215,10 +213,6 @@ document.getElementById('search-input').addEventListener('input', e => {
     }, 350);
 });
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('mobile-overlay').classList.toggle('active');
-}
 
 const FIRE_ICON = L.divIcon({ className: '', iconSize: [32,32], iconAnchor: [16,16],
     html: `<div style="width:32px;height:32px;background:#D62828;border-radius:50%;border:2px solid white;display:flex;align-items:center;justify-content:center;box-shadow:0 0 20px rgba(214,40,40,.8)"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="white" stroke-width="2.5"><path d="M8.5 14.5A2.5 2.5 0 0 0 11 12c0-1.38-.5-2-1-3-1.072-2.143-.224-4.054 2-6 .5 2.5 2 4.9 4 6.5 2 1.6 3 3.5 3 5.5a7 7 0 1 1-14 0c0-1.153.433-2.294 1-3a2.5 2.5 0 0 0 2.5 2.5z"/></svg></div>`

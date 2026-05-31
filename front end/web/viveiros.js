@@ -1,5 +1,3 @@
-const API = 'http://127.0.0.1:8000';
-
 let board = { solicitacoes: [], em_preparo: [], prontas: [] };
 let filtroViveiro = 'Todos os Viveiros (4)';
 
@@ -320,10 +318,6 @@ function selectOption(text) {
     renderBoard();
 }
 
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('mobile-overlay').classList.toggle('active');
-}
 
 document.addEventListener('DOMContentLoaded', async () => {
     lucide.createIcons();
@@ -349,15 +343,16 @@ document.addEventListener('DOMContentLoaded', async () => {
 
     document.getElementById('form-semeadura').addEventListener('submit', async e => {
         e.preventDefault();
-        const especie = document.getElementById('s-especie').value;
-        const viveiro = document.getElementById('s-viveiro').value;
-        const destino = document.getElementById('s-destino').value || 'A definir';
-        
+        const especie   = document.getElementById('s-especie').value;
+        const viveiro   = document.getElementById('s-viveiro').value;
+        const destino   = document.getElementById('s-destino').value || 'A definir';
+        const quantidade = parseInt(document.getElementById('s-quantidade').value, 10) || 0;
+
         try {
             await fetch(API + '/viveiros/lotes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ especie, viveiro, destino })
+                body: JSON.stringify({ especie, viveiro, destino, quantidade })
             });
             board = await fetch(API + '/viveiros/board').then(r => r.json());
             renderBoard();

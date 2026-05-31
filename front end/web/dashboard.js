@@ -1,4 +1,3 @@
-const API = 'http://127.0.0.1:8000';
 let mapRef = null;
 let markersLayer = null;
 let polisLayer = null;
@@ -30,6 +29,7 @@ async function carregarKPIs(municipio = null) {
     try {
         const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
         const res = await fetch(`${API}/dashboard/kpis${params}`);
+        if (!res.ok) throw new Error(res.status);
         const d = await res.json();
         document.getElementById('kpi-mudas').textContent = fmt(d.mudas_atestadas);
         document.getElementById('kpi-sobrevivencia').textContent = d.sobrevivencia_pct;
@@ -44,6 +44,7 @@ async function carregarAlertas(municipio = null) {
     try {
         const params = municipio ? `?municipio=${encodeURIComponent(municipio)}` : '';
         const res = await fetch(`${API}/alertas/${params}`);
+        if (!res.ok) throw new Error(res.status);
         const alertas = await res.json();
         if (!alertas.length) {
             feed.innerHTML = `<div class="text-center py-8 text-gray-400 text-xs">Nenhum alerta encontrado${municipio ? ` em ${municipio}` : ''}</div>`;
@@ -81,6 +82,7 @@ async function carregarAlertas(municipio = null) {
 async function carregarNotificacoes() {
     try {
         const res = await fetch(`${API}/notificacoes/nao-lidas/total`);
+        if (!res.ok) throw new Error(res.status);
         const { total } = await res.json();
         const badge = document.getElementById('notif-badge');
         if (total > 0) {
@@ -166,6 +168,7 @@ document.getElementById('search-input').addEventListener('input', e => {
     searchTimer = setTimeout(async () => {
         try {
             const res = await fetch(`${API}/propriedades/busca?q=${encodeURIComponent(q)}`);
+            if (!res.ok) throw new Error(res.status);
             const data = await res.json();
             if (!data.length) { results.classList.add('hidden'); return; }
             results.innerHTML = data.map(p => `

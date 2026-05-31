@@ -1,5 +1,3 @@
-const API = 'http://127.0.0.1:8000';
-
 let todosProductores = [];
 let filtroStatus = 'todos';
 let buscaTexto = '';
@@ -327,11 +325,6 @@ function iniciarBusca(input) {
     }, 300);
 }
 
-// --- Sidebar mobile ---
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('mobile-overlay').classList.toggle('active');
-}
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {

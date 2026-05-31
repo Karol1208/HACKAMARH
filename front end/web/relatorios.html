@@ -44,42 +44,7 @@
 <body class="flex h-screen w-screen overflow-hidden">
     <div class="bg-aurora"></div>
     <div class="bg-topographic"></div>
-    <div id="mobile-overlay" class="fixed inset-0 bg-brand-cerrado/40 backdrop-blur-sm z-30 overlay lg:hidden" onclick="toggleSidebar()"></div>
-
-    <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:relative lg:translate-x-0 w-64 shrink-0 glass-panel border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-300 ease-in-out">
-        <div>
-            <div class="h-20 flex items-center justify-between lg:justify-start px-6 border-b border-gray-100">
-                <div class="flex items-center gap-3">
-                    <div class="relative w-10 h-10 flex items-center justify-center shrink-0">
-                        <div class="absolute inset-0 bg-brand-cerrado rounded-tl-xl rounded-br-xl opacity-20 transform rotate-45"></div>
-                        <div class="absolute inset-1 bg-brand-river rounded-tl-xl rounded-br-xl opacity-80 transform rotate-45 mix-blend-multiply"></div>
-                        <i data-lucide="leaf" class="text-white w-5 h-5 z-10 relative transform -rotate-12"></i>
-                    </div>
-                    <div>
-                        <h1 class="font-display font-extrabold text-xl text-brand-cerrado leading-none">Canindé</h1>
-                        <span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">SEMARH / TO</span>
-                    </div>
-                </div>
-                <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-gray-700 bg-gray-50 rounded-lg p-1.5 border border-gray-200"><i data-lucide="x" class="w-5 h-5"></i></button>
-            </div>
-            <nav class="mt-6 px-3 space-y-2">
-                <a href="dashboard.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group"><i data-lucide="layout-dashboard" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i><span class="font-medium text-sm">Visão Geral</span></a>
-                <a href="alertas.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group"><i data-lucide="crosshair" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i><span class="font-medium text-sm">Alertas IA (Sweep)</span><span id="alertas-badge" class="ml-auto bg-brand-fire text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span></a>
-                <a href="gestao_viveiro.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group"><i data-lucide="sprout" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i><span class="font-medium text-sm">Gestão de Viveiros</span></a>
-                <a href="produtores.html" class="flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group"><i data-lucide="users" class="w-5 h-5 shrink-0 group-hover:scale-110 transition"></i><span class="font-medium text-sm">Produtores (CAR)</span></a>
-                <a href="relatorios.html" class="flex items-center gap-3 px-4 py-3 bg-brand-cerrado text-white rounded-xl shadow-md transition group"><i data-lucide="bar-chart-2" class="w-5 h-5 shrink-0"></i><span class="font-medium text-sm">Relatórios ESG</span></a>
-            </nav>
-        </div>
-        <div class="p-4 border-t border-gray-100">
-            <div id="user-profile-area" class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-gray-100">
-                <img id="user-avatar" src="https://ui-avatars.com/api/?name=CICC+Auditor&background=285430&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white shadow-sm shrink-0">
-                <div>
-                    <p id="user-nome" class="text-sm font-bold text-gray-800 leading-tight">Auditoria CICC</p>
-                    <p id="user-credencial" class="text-[10px] text-gray-500 font-mono">ID: TO-4921</p>
-                </div>
-            </div>
-        </div>
-    </aside>
+    <div id="sidebar-placeholder" data-pagina-ativa="relatorios"></div>
 
     <main class="flex-1 flex flex-col h-full relative z-10 overflow-hidden w-full">
         <header class="h-20 glass-panel border-b border-gray-200/50 flex items-center justify-between px-4 lg:px-6 shrink-0 z-20">

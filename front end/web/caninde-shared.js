@@ -1,9 +1,78 @@
-const _API = 'http://127.0.0.1:8000';
+// Variável de API centralizada — usada por todos os JS da aplicação
+const API = 'http://127.0.0.1:8000';
 
-// ── Badge de alertas ─────────────────────────────────────────────────────────
+// ── Sidebar dinâmica ──────────────────────────────────────────────────────────
+function toggleSidebar() {
+    document.getElementById('sidebar').classList.toggle('-translate-x-full');
+    document.getElementById('mobile-overlay').classList.toggle('active');
+}
+
+function renderSidebar() {
+    const placeholder = document.getElementById('sidebar-placeholder');
+    if (!placeholder) return;
+
+    const paginaAtiva = placeholder.dataset.paginaAtiva || '';
+
+    const navItems = [
+        { id: 'dashboard',  href: 'dashboard.html',     icon: 'layout-dashboard', label: 'Visão Geral' },
+        { id: 'alertas',    href: 'alertas.html',        icon: 'crosshair',        label: 'Alertas IA (Sweep)', badge: true },
+        { id: 'viveiros',   href: 'gestao_viveiro.html', icon: 'sprout',           label: 'Gestão de Viveiros' },
+        { id: 'produtores', href: 'produtores.html',     icon: 'users',            label: 'Produtores (CAR)' },
+        { id: 'relatorios', href: 'relatorios.html',     icon: 'bar-chart-2',      label: 'Relatórios ESG' },
+    ];
+
+    const navHTML = navItems.map(item => {
+        const active = item.id === paginaAtiva;
+        const cls = active
+            ? 'flex items-center gap-3 px-4 py-3 bg-brand-cerrado text-white rounded-xl shadow-md transition group'
+            : 'flex items-center gap-3 px-4 py-3 text-gray-600 hover:bg-white hover:text-brand-cerrado rounded-xl transition group';
+        const iconCls = active ? 'w-5 h-5 shrink-0' : 'w-5 h-5 shrink-0 group-hover:scale-110 transition';
+        const badgeHTML = item.badge
+            ? `<span id="alertas-badge" class="ml-auto bg-brand-fire text-white text-[10px] font-bold px-2 py-0.5 rounded-full">3</span>`
+            : '';
+        return `<a href="${item.href}" class="${cls}"><i data-lucide="${item.icon}" class="${iconCls}"></i><span class="font-medium text-sm">${item.label}</span>${badgeHTML}</a>`;
+    }).join('');
+
+    placeholder.outerHTML = `
+        <div id="mobile-overlay" class="fixed inset-0 bg-brand-cerrado/40 backdrop-blur-sm z-30 overlay lg:hidden" onclick="toggleSidebar()"></div>
+        <aside id="sidebar" class="fixed inset-y-0 left-0 transform -translate-x-full lg:relative lg:translate-x-0 w-64 shrink-0 glass-panel border-r border-gray-200 flex flex-col justify-between z-40 transition-transform duration-300 ease-in-out">
+            <div>
+                <div class="h-20 flex items-center justify-between lg:justify-start px-6 border-b border-gray-100">
+                    <div class="flex items-center gap-3">
+                        <div class="relative w-10 h-10 flex items-center justify-center shrink-0">
+                            <div class="absolute inset-0 bg-brand-cerrado rounded-tl-xl rounded-br-xl opacity-20 transform rotate-45"></div>
+                            <div class="absolute inset-1 bg-brand-river rounded-tl-xl rounded-br-xl opacity-80 transform rotate-45 mix-blend-multiply"></div>
+                            <i data-lucide="leaf" class="text-white w-5 h-5 z-10 relative transform -rotate-12"></i>
+                        </div>
+                        <div>
+                            <h1 class="font-display font-extrabold text-xl text-brand-cerrado leading-none">Canindé</h1>
+                            <span class="text-[9px] uppercase tracking-widest text-gray-500 font-bold">SEMARH / TO</span>
+                        </div>
+                    </div>
+                    <button onclick="toggleSidebar()" class="lg:hidden text-gray-400 hover:text-gray-700 bg-gray-50 rounded-lg p-1.5 border border-gray-200">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+                <nav class="mt-6 px-3 space-y-2">${navHTML}</nav>
+            </div>
+            <div class="p-4 border-t border-gray-100">
+                <div id="user-profile-area" class="flex items-center gap-3 bg-white/50 p-3 rounded-xl border border-gray-100">
+                    <img id="user-avatar" src="https://ui-avatars.com/api/?name=Admin&background=285430&color=fff" alt="Avatar" class="w-10 h-10 rounded-full border-2 border-white shadow-sm shrink-0">
+                    <div>
+                        <p id="user-nome" class="text-sm font-bold text-gray-800 leading-tight">Carregando...</p>
+                        <p id="user-credencial" class="text-[10px] text-gray-500 font-mono">—</p>
+                    </div>
+                </div>
+            </div>
+        </aside>`;
+}
+
+// ── Badge de alertas ──────────────────────────────────────────────────────────
 async function atualizarBadgeAlertas() {
     try {
-        const { total } = await fetch(`${_API}/alertas/total`).then(r => r.json());
+        const res = await fetch(`${API}/alertas/total`);
+        if (!res.ok) return;
+        const { total } = await res.json();
         const badge = document.getElementById('alertas-badge');
         if (!badge) return;
         if (total > 0) {
@@ -15,7 +84,7 @@ async function atualizarBadgeAlertas() {
     } catch { /* API offline — mantém estado atual */ }
 }
 
-// ── Sessão do usuário ────────────────────────────────────────────────────────
+// ── Sessão do usuário ─────────────────────────────────────────────────────────
 function getUsuario() {
     try { return JSON.parse(localStorage.getItem('caninde_user')); }
     catch { return null; }
@@ -37,24 +106,21 @@ function carregarPerfil() {
     const path = location.pathname;
     const user = getUsuario();
 
-    // Redireciona para login se não autenticado (exceto nas páginas públicas)
     if (!user && !path.includes('login') && !path.includes('cadastro')) {
         location.href = 'login.html';
         return;
     }
 
-    const nomeEl  = document.getElementById('user-nome');
-    const credEl  = document.getElementById('user-credencial');
+    const nomeEl   = document.getElementById('user-nome');
+    const credEl   = document.getElementById('user-credencial');
     const avatarEl = document.getElementById('user-avatar');
-    const areaEl  = document.getElementById('user-profile-area');
+    const areaEl   = document.getElementById('user-profile-area');
 
-    if (!nomeEl || !user) return;
+    if (!nomeEl || !credEl || !user) return;
 
-    // Atualiza textos
     nomeEl.textContent = user.nome;
     credEl.textContent = 'ID: ' + user.credencial;
 
-    // Atualiza avatar
     if (avatarEl) {
         if (avatarEl.tagName === 'IMG') {
             avatarEl.src = `https://ui-avatars.com/api/?name=${encodeURIComponent(user.nome)}&background=285430&color=fff`;
@@ -64,7 +130,6 @@ function carregarPerfil() {
         }
     }
 
-    // Injeta dropdown de logout
     if (!areaEl) return;
     areaEl.style.cursor = 'pointer';
 
@@ -89,12 +154,13 @@ function carregarPerfil() {
         e.stopPropagation();
         menu.classList.toggle('hidden');
     });
-
     document.addEventListener('click', () => menu.classList.add('hidden'));
 }
 
-// ── Init ─────────────────────────────────────────────────────────────────────
+// ── Init ──────────────────────────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-    atualizarBadgeAlertas();
-    carregarPerfil();
+    renderSidebar();        // 1. injeta sidebar (antes de tudo)
+    lucide.createIcons();   // 2. renderiza ícones do sidebar
+    atualizarBadgeAlertas(); // 3. conta alertas reais
+    carregarPerfil();       // 4. preenche usuário logado
 });

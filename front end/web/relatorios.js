@@ -1,5 +1,3 @@
-const API = 'http://127.0.0.1:8000';
-
 function toast(msg, tipo) {
     const t = document.createElement('div');
     t.style.cssText = 'position:fixed;bottom:24px;right:24px;z-index:999;padding:12px 20px;border-radius:12px;font-size:14px;font-weight:700;color:white;box-shadow:0 10px 30px rgba(0,0,0,.2)';
@@ -172,11 +170,6 @@ async function baixarDossiePDF() {
     }
 }
 
-// --- Sidebar ---
-function toggleSidebar() {
-    document.getElementById('sidebar').classList.toggle('-translate-x-full');
-    document.getElementById('mobile-overlay').classList.toggle('active');
-}
 
 // --- Init ---
 document.addEventListener('DOMContentLoaded', () => {
