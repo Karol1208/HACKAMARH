@@ -1,142 +1,145 @@
 import 'package:flutter/material.dart';
 import '../theme/app_theme.dart';
-import 'home_screen.dart';
+import 'alerta_cidadao_screen.dart';
 
-class LoginScreen extends StatefulWidget {
+class LoginScreen extends StatelessWidget {
   const LoginScreen({super.key});
-
-  @override
-  State<LoginScreen> createState() => _LoginScreenState();
-}
-
-class _LoginScreenState extends State<LoginScreen> {
-  final _credencial = TextEditingController();
-  final _senha = TextEditingController();
-  bool _senhaVisivel = false;
-  bool _carregando = false;
-
-  void _entrar() async {
-    if (_credencial.text.isEmpty || _senha.text.isEmpty) return;
-    setState(() => _carregando = true);
-    await Future.delayed(const Duration(milliseconds: 800));
-    if (!mounted) return;
-    Navigator.pushReplacement(
-      context,
-      MaterialPageRoute(builder: (_) => const HomeScreen()),
-    );
-  }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(24),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              const SizedBox(height: 32),
-              _buildLogo(),
-              const SizedBox(height: 40),
-              Text('Acesso CICC',
-                  style: Theme.of(context).textTheme.headlineMedium?.copyWith(
-                        fontWeight: FontWeight.w800,
-                        color: AppColors.text,
-                      )),
-              const SizedBox(height: 4),
-              Text('Identifique-se para acessar o painel',
-                  style: TextStyle(color: Colors.grey[600], fontSize: 14)),
-              const SizedBox(height: 32),
-              TextFormField(
-                controller: _credencial,
-                decoration: const InputDecoration(
-                  labelText: 'Credencial ou Matrícula',
-                  hintText: 'Ex: TO-4921 ou email@to.gov.br',
-                  prefixIcon: Icon(Icons.person_outline),
-                ),
-              ),
-              const SizedBox(height: 16),
-              TextFormField(
-                controller: _senha,
-                obscureText: !_senhaVisivel,
-                decoration: InputDecoration(
-                  labelText: 'Senha de Acesso',
-                  hintText: '••••••••',
-                  prefixIcon: const Icon(Icons.lock_outline),
-                  suffixIcon: IconButton(
-                    icon: Icon(_senhaVisivel
-                        ? Icons.visibility_off_outlined
-                        : Icons.visibility_outlined),
-                    onPressed: () =>
-                        setState(() => _senhaVisivel = !_senhaVisivel),
-                  ),
-                ),
-              ),
-              const SizedBox(height: 8),
-              Align(
-                alignment: Alignment.centerRight,
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text('Esqueceu a senha?',
-                      style: TextStyle(color: AppColors.river)),
-                ),
-              ),
-              const SizedBox(height: 16),
-              _carregando
-                  ? const Center(
-                      child: CircularProgressIndicator(color: AppColors.cerrado))
-                  : ElevatedButton.icon(
-                      onPressed: _entrar,
-                      icon: const Icon(Icons.arrow_forward),
-                      label: const Text('Autenticar Acesso'),
-                    ),
-              const SizedBox(height: 32),
-              Center(
-                child: TextButton(
-                  onPressed: () {},
-                  child: const Text(
-                    'Solicitar Cadastro ao Naturatins →',
-                    style: TextStyle(color: AppColors.river, fontSize: 13),
-                  ),
-                ),
-              ),
-            ],
+      body: Stack(
+        fit: StackFit.expand,
+        children: [
+          Image.network(
+            'https://picsum.photos/seed/cerrado/600/900',
+            fit: BoxFit.cover,
+            color: AppColors.cerrado.withOpacity(0.55),
+            colorBlendMode: BlendMode.multiply,
+            errorBuilder: (_, __, ___) => Container(color: AppColors.cerrado),
           ),
-        ),
+          Container(
+            decoration: const BoxDecoration(
+              gradient: LinearGradient(
+                begin: Alignment.topCenter,
+                end: Alignment.bottomCenter,
+                colors: [Colors.transparent, Color(0xCC0D1F10), Color(0xEE000000)],
+                stops: [0.0, 0.55, 1.0],
+              ),
+            ),
+          ),
+          SafeArea(
+            child: Padding(
+              padding: const EdgeInsets.fromLTRB(24, 20, 24, 24),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  const Spacer(flex: 2),
+                  Container(
+                    width: 64,
+                    height: 64,
+                    decoration: BoxDecoration(
+                      color: Colors.white.withOpacity(0.12),
+                      borderRadius: BorderRadius.circular(18),
+                      border: Border.all(color: Colors.white.withOpacity(0.25)),
+                    ),
+                    child: const Icon(Icons.eco, color: Colors.white, size: 30),
+                  ),
+                  const SizedBox(height: 20),
+                  const Text(
+                    'Esta terra\né nossa.',
+                    style: TextStyle(
+                      fontSize: 38,
+                      fontWeight: FontWeight.w800,
+                      color: Colors.white,
+                      height: 1.15,
+                    ),
+                  ),
+                  const SizedBox(height: 8),
+                  const Text(
+                    'PROJETO CANINDÉ',
+                    style: TextStyle(
+                      color: AppColors.jalapao,
+                      fontWeight: FontWeight.w700,
+                      fontSize: 11,
+                      letterSpacing: 3.5,
+                    ),
+                  ),
+                  const SizedBox(height: 16),
+                  Text(
+                    'Monitoramento ambiental, acesso a mudas e validação de créditos de carbono do Tocantins.',
+                    style: TextStyle(
+                      color: Colors.white.withOpacity(0.75),
+                      fontSize: 14,
+                      height: 1.65,
+                    ),
+                  ),
+                  const Spacer(flex: 3),
+                  _buildBtn(
+                    onTap: () => Navigator.pushReplacementNamed(context, '/main'),
+                    bgColor: Colors.white,
+                    child: Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: AppColors.river,
+                            borderRadius: BorderRadius.circular(4),
+                          ),
+                          child: const Text('gov.br',
+                              style: TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.w800)),
+                        ),
+                        const SizedBox(width: 10),
+                        const Text('Acesso Produtor (CAR)',
+                            style: TextStyle(color: AppColors.cerrado, fontWeight: FontWeight.w700, fontSize: 15)),
+                      ],
+                    ),
+                  ),
+                  const SizedBox(height: 12),
+                  _buildBtn(
+                    onTap: () => Navigator.push(
+                        context, MaterialPageRoute(builder: (_) => const AlertaCidadaoScreen())),
+                    bgColor: AppColors.fire.withOpacity(0.2),
+                    borderColor: AppColors.fire.withOpacity(0.5),
+                    child: const Row(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      children: [
+                        Icon(Icons.warning_amber_rounded, color: Colors.white, size: 18),
+                        SizedBox(width: 8),
+                        Text('Denunciar Queimada',
+                            style: TextStyle(color: Colors.white, fontWeight: FontWeight.w700, fontSize: 15)),
+                      ],
+                    ),
+                  ),
+                ],
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
 
-  Widget _buildLogo() {
-    return Row(
-      children: [
-        Container(
-          width: 44,
-          height: 44,
-          decoration: BoxDecoration(
-            color: AppColors.cerrado,
-            borderRadius: BorderRadius.circular(12),
-          ),
-          child: const Icon(Icons.eco, color: Colors.white, size: 24),
+  Widget _buildBtn({
+    required VoidCallback onTap,
+    required Color bgColor,
+    Color? borderColor,
+    required Widget child,
+  }) {
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        width: double.infinity,
+        height: 56,
+        decoration: BoxDecoration(
+          color: bgColor,
+          borderRadius: BorderRadius.circular(16),
+          border: borderColor != null ? Border.all(color: borderColor) : null,
         ),
-        const SizedBox(width: 12),
-        Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const Text('Canindé',
-                style: TextStyle(
-                    fontSize: 22,
-                    fontWeight: FontWeight.w800,
-                    color: AppColors.cerrado)),
-            Text('SEMARH / TO',
-                style: TextStyle(
-                    fontSize: 10,
-                    letterSpacing: 2,
-                    color: Colors.grey[500],
-                    fontWeight: FontWeight.w700)),
-          ],
-        ),
-      ],
+        alignment: Alignment.center,
+        child: child,
+      ),
     );
   }
 }

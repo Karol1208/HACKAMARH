@@ -1,4 +1,4 @@
-import 'dart:io';
+import 'dart:typed_data';
 import 'package:flutter/material.dart';
 import 'package:image_picker/image_picker.dart';
 import '../theme/app_theme.dart';
@@ -13,347 +13,413 @@ class ScannerRestauracaoScreen extends StatefulWidget {
 }
 
 class _ScannerRestauracaoScreenState extends State<ScannerRestauracaoScreen> {
-  File? _imagem;
-  _Estado _estado = _Estado.aguardando;
+  XFile? _imagem;
+  Uint8List? _imagemBytes;
+  bool _analisando = false;
+  bool _concluido = false;
   Map<String, dynamic>? _resultado;
-  String? _erroMsg;
+  String _especie = 'Parkia platycephala (Fava)';
+  String _saude = 'saudavel';
+  bool _dropdownOpen = false;
+
+  final _especies = const [
+    'Parkia platycephala (Fava)',
+    'Handroanthus albus (Ipê)',
+    'Myracrodruon urundeuva (Aroeira)',
+    'Caryocar brasiliense (Pequi)',
+  ];
 
   Future<void> _capturarFoto() async {
-    final picker = ImagePicker();
-    final foto = await picker.pickImage(
-      source: ImageSource.camera,
-      imageQuality: 90,
-    );
+    final foto = await ImagePicker()
+        .pickImage(source: ImageSource.camera, imageQuality: 90);
     if (foto == null) return;
+    final bytes = await foto.readAsBytes();
     setState(() {
-      _imagem = File(foto.path);
-      _estado = _Estado.aguardando;
+      _imagem = foto;
+      _imagemBytes = bytes;
+      _concluido = false;
       _resultado = null;
     });
   }
 
-  Future<void> _analisar() async {
+  Future<void> _salvarSincronizar() async {
     if (_imagem == null) {
       _capturarFoto();
       return;
     }
-    setState(() => _estado = _Estado.analisando);
+    setState(() => _analisando = true);
     try {
       final res = await ApiService.analisarMuda(_imagem!);
       setState(() {
-        _estado = _Estado.concluido;
+        _analisando = false;
+        _concluido = true;
         _resultado = res;
       });
-    } catch (e) {
-      setState(() {
-        _estado = _Estado.erro;
-        _erroMsg = 'Não foi possível analisar a imagem.\nVerifique sua conexão.';
-      });
+    } catch (_) {
+      setState(() => _analisando = false);
     }
-  }
-
-  void _resetar() {
-    setState(() {
-      _imagem = null;
-      _estado = _Estado.aguardando;
-      _resultado = null;
-      _erroMsg = null;
-    });
+    if (!mounted) return;
+    if (_concluido) {
+      ScaffoldMessenger.of(context).showSnackBar(
+        const SnackBar(
+            content: Text('Leitura da muda sincronizada no PRAD!'),
+            backgroundColor: AppColors.cerrado),
+      );
+      await Future.delayed(const Duration(seconds: 2));
+      if (mounted) Navigator.pop(context);
+    }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        title: const Text('Scanner de Mudas'),
-        leading: const BackButton(),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(1),
-          child: Divider(height: 1, color: Colors.grey.shade200),
-        ),
-      ),
-      body: SafeArea(
-        child: SingleChildScrollView(
-          padding: const EdgeInsets.all(20),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              _buildBannerInfo(),
-              const SizedBox(height: 20),
-              _buildFotoArea(),
-              const SizedBox(height: 16),
-              if (_estado == _Estado.concluido && _resultado != null)
-                _buildResultado(),
-              if (_estado == _Estado.erro) _buildErro(),
-              if (_estado != _Estado.concluido) _buildBotao(),
-              if (_estado == _Estado.concluido) ...[
-                _buildBotaoNovo(),
-              ],
-            ],
-          ),
-        ),
-      ),
-    );
-  }
-
-  Widget _buildBannerInfo() {
-    return Container(
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.cerrado.withOpacity(0.06),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.cerrado.withOpacity(0.2)),
-      ),
-      child: Row(
+      body: Stack(
+        fit: StackFit.expand,
         children: [
-          const Icon(Icons.eco_outlined, color: AppColors.cerrado, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(
-              'Fotografe suas mudas para atestar o crescimento anual via IA. Os dados geram evidências técnicas para o Selo Verde CarbonTO.',
-              style: TextStyle(fontSize: 12, color: Colors.grey[700], height: 1.4),
-            ),
-          ),
+          _buildCameraBackground(),
+          _buildAROverlay(),
+          _buildTopBar(),
+          _buildBottomSheet(),
         ],
       ),
     );
   }
 
-  Widget _buildFotoArea() {
-    return GestureDetector(
-      onTap: _capturarFoto,
-      child: Container(
-        height: 220,
-        width: double.infinity,
-        decoration: BoxDecoration(
-          color: Colors.white,
-          borderRadius: BorderRadius.circular(16),
-          border: Border.all(
-            color: _imagem != null
-                ? AppColors.cerrado.withOpacity(0.3)
-                : Colors.grey.shade300,
-            width: _imagem != null ? 2 : 1,
-          ),
+  Widget _buildCameraBackground() {
+    if (_imagemBytes != null) {
+      return Image.memory(_imagemBytes!, fit: BoxFit.cover);
+    }
+    return Container(
+      decoration: const BoxDecoration(
+        gradient: LinearGradient(
+          begin: Alignment.topCenter,
+          end: Alignment.bottomCenter,
+          colors: [Color(0xFF0A1F10), Color(0xFF1A3520), Color(0xFF0D1207)],
         ),
-        clipBehavior: Clip.antiAlias,
-        child: _imagem != null
-            ? Stack(
-                fit: StackFit.expand,
-                children: [
-                  Image.file(_imagem!, fit: BoxFit.cover),
-                  Positioned(
-                    top: 8,
-                    right: 8,
-                    child: GestureDetector(
-                      onTap: _capturarFoto,
-                      child: Container(
-                        padding: const EdgeInsets.all(6),
-                        decoration: BoxDecoration(
-                          color: Colors.black54,
-                          borderRadius: BorderRadius.circular(8),
-                        ),
-                        child: const Icon(Icons.camera_alt,
-                            color: Colors.white, size: 18),
-                      ),
-                    ),
-                  ),
-                ],
-              )
-            : Column(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: [
-                  Icon(Icons.document_scanner_outlined,
-                      size: 44, color: Colors.grey[400]),
-                  const SizedBox(height: 10),
-                  Text('Toque para fotografar a muda',
-                      style: TextStyle(color: Colors.grey[500], fontSize: 13)),
-                  const SizedBox(height: 4),
-                  Text('Use boa iluminação e fundo limpo',
-                      style: TextStyle(color: Colors.grey[400], fontSize: 11)),
-                ],
-              ),
       ),
     );
   }
 
-  Widget _buildResultado() {
-    final total = _resultado!['total_mudas_detectadas'] as int? ?? 0;
-    final apta = _resultado!['apta_para_selo'] as bool? ?? false;
-    final deteccoes = (_resultado!['deteccoes'] as List?) ?? [];
-
-    return Column(
-      crossAxisAlignment: CrossAxisAlignment.start,
-      children: [
-        Container(
-          padding: const EdgeInsets.all(16),
-          margin: const EdgeInsets.only(bottom: 16),
-          decoration: BoxDecoration(
-            gradient: LinearGradient(
-              colors: apta
-                  ? [AppColors.cerrado, const Color(0xFF1B6B35)]
-                  : [AppColors.jalapao, const Color(0xFFB8860B)],
-            ),
-            borderRadius: BorderRadius.circular(16),
-          ),
-          child: Row(
+  Widget _buildAROverlay() {
+    return Padding(
+      padding: const EdgeInsets.only(bottom: 280),
+      child: Center(
+        child: SizedBox(
+          width: 260,
+          height: 330,
+          child: Stack(
             children: [
-              Icon(
-                apta ? Icons.verified : Icons.pending_outlined,
-                color: Colors.white,
-                size: 32,
+              CustomPaint(
+                size: const Size(260, 330),
+                painter: _DashedBorderPainter(),
               ),
-              const SizedBox(width: 14),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      apta ? 'Apta para Selo Verde!' : 'Análise Inconclusiva',
-                      style: const TextStyle(
+              // Green vertical line
+              Positioned(
+                left: 129,
+                top: 20,
+                bottom: 80,
+                child: Container(
+                  width: 2,
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF4ADE80),
+                    boxShadow: [
+                      BoxShadow(
+                          color: const Color(0xFF4ADE80).withOpacity(0.6),
+                          blurRadius: 10,
+                          spreadRadius: 2)
+                    ],
+                  ),
+                ),
+              ),
+              // A4 reference box
+              Positioned(
+                right: 12,
+                bottom: 12,
+                child: Container(
+                  width: 52,
+                  height: 76,
+                  decoration: BoxDecoration(
+                    border: Border.all(color: Colors.white, width: 2),
+                    color: Colors.white.withOpacity(0.15),
+                    borderRadius: BorderRadius.circular(4),
+                  ),
+                  child: const Center(
+                    child: Text('Ref:\nA4',
+                        textAlign: TextAlign.center,
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 9,
+                            fontWeight: FontWeight.w700)),
+                  ),
+                ),
+              ),
+              // Height badge
+              Positioned(
+                left: 140,
+                top: 36,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                  decoration: BoxDecoration(
+                    color: AppColors.cerrado,
+                    borderRadius: BorderRadius.circular(8),
+                    border: Border.all(color: Colors.white, width: 1),
+                  ),
+                  child: const Text('1.2m (Est.)',
+                      style: TextStyle(
                           color: Colors.white,
-                          fontWeight: FontWeight.w800,
-                          fontSize: 15),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      '$total muda${total != 1 ? 's' : ''} detectada${total != 1 ? 's' : ''}',
-                      style: const TextStyle(
-                          color: Colors.white70, fontSize: 12),
-                    ),
-                  ],
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700)),
                 ),
               ),
             ],
           ),
         ),
-        if (deteccoes.isNotEmpty) ...[
-          const Text('Detecções por IA',
-              style: TextStyle(
-                  fontWeight: FontWeight.w700,
-                  fontSize: 13,
-                  color: AppColors.text)),
-          const SizedBox(height: 8),
-          ...deteccoes.asMap().entries.map((e) {
-            final d = e.value as Map;
-            final conf = ((d['confianca'] as num) * 100).toStringAsFixed(0);
-            final h = (d['altura_px'] as num).toStringAsFixed(0);
-            final w = (d['largura_px'] as num).toStringAsFixed(0);
-            return Container(
-              margin: const EdgeInsets.only(bottom: 8),
-              padding: const EdgeInsets.all(12),
-              decoration: BoxDecoration(
-                color: Colors.white,
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: Colors.grey.shade200),
+      ),
+    );
+  }
+
+  Widget _buildTopBar() {
+    return SafeArea(
+      child: Padding(
+        padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 12),
+        child: Row(
+          mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          children: [
+            GestureDetector(
+              onTap: () => Navigator.pop(context),
+              child: Container(
+                width: 40,
+                height: 40,
+                decoration: BoxDecoration(
+                    color: Colors.white.withOpacity(0.2),
+                    shape: BoxShape.circle),
+                child: const Icon(Icons.close, color: Colors.white, size: 20),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Row(
-                    children: [
-                      const Icon(Icons.eco, color: AppColors.cerrado, size: 16),
-                      const SizedBox(width: 8),
-                      Text('Muda ${e.key + 1}',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.w600, fontSize: 13)),
-                    ],
-                  ),
-                  Row(
-                    children: [
-                      _metricaChip('${w}×${h}px', Colors.grey.shade100,
-                          Colors.grey.shade600),
-                      const SizedBox(width: 6),
-                      _metricaChip('$conf%', AppColors.cerrado.withOpacity(0.1),
-                          AppColors.cerrado),
-                    ],
-                  ),
-                ],
-              ),
-            );
-          }),
-        ],
-        const SizedBox(height: 16),
-      ],
-    );
-  }
-
-  Widget _metricaChip(String label, Color bg, Color text) {
-    return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
-      decoration:
-          BoxDecoration(color: bg, borderRadius: BorderRadius.circular(6)),
-      child: Text(label,
-          style:
-              TextStyle(fontSize: 10, fontWeight: FontWeight.w700, color: text)),
-    );
-  }
-
-  Widget _buildErro() {
-    return Container(
-      margin: const EdgeInsets.only(bottom: 16),
-      padding: const EdgeInsets.all(14),
-      decoration: BoxDecoration(
-        color: AppColors.fire.withOpacity(0.07),
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: AppColors.fire.withOpacity(0.2)),
-      ),
-      child: Row(
-        children: [
-          const Icon(Icons.error_outline, color: AppColors.fire, size: 20),
-          const SizedBox(width: 10),
-          Expanded(
-            child: Text(_erroMsg ?? '',
-                style: const TextStyle(
-                    fontSize: 12, color: AppColors.fire, height: 1.4)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildBotao() {
-    final semFoto = _imagem == null;
-    return SizedBox(
-      width: double.infinity,
-      child: ElevatedButton.icon(
-        onPressed: _estado == _Estado.analisando ? null : _analisar,
-        icon: _estado == _Estado.analisando
-            ? const SizedBox(
-                width: 18,
-                height: 18,
-                child: CircularProgressIndicator(
-                    color: Colors.white, strokeWidth: 2))
-            : Icon(semFoto ? Icons.camera_alt : Icons.document_scanner),
-        label: Text(_estado == _Estado.analisando
-            ? 'Analisando com IA...'
-            : semFoto
-                ? 'Tirar Foto da Muda'
-                : 'Analisar com IA'),
-      ),
-    );
-  }
-
-  Widget _buildBotaoNovo() {
-    return Column(
-      children: [
-        SizedBox(
-          width: double.infinity,
-          child: OutlinedButton.icon(
-            onPressed: _resetar,
-            icon: const Icon(Icons.refresh, color: AppColors.cerrado),
-            label: const Text('Nova Análise',
-                style: TextStyle(color: AppColors.cerrado)),
-            style: OutlinedButton.styleFrom(
-              minimumSize: const Size(double.infinity, 52),
-              side: const BorderSide(color: AppColors.cerrado),
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(14)),
             ),
-          ),
+            GestureDetector(
+              onTap: _capturarFoto,
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+                decoration: BoxDecoration(
+                  color: Colors.black.withOpacity(0.4),
+                  borderRadius: BorderRadius.circular(20),
+                ),
+                child: const Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Icon(Icons.satellite_alt, color: Colors.white, size: 12),
+                    SizedBox(width: 6),
+                    Text('GPS Ativo',
+                        style: TextStyle(
+                            color: Colors.white,
+                            fontSize: 11,
+                            fontWeight: FontWeight.w600)),
+                  ],
+                ),
+              ),
+            ),
+          ],
         ),
-      ],
+      ),
+    );
+  }
+
+  Widget _buildBottomSheet() {
+    return Positioned(
+      bottom: 0,
+      left: 0,
+      right: 0,
+      child: Container(
+        padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+        decoration: const BoxDecoration(
+          color: Colors.white,
+          borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
+          boxShadow: [BoxShadow(color: Colors.black26, blurRadius: 20)],
+        ),
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Center(
+              child: Container(
+                  width: 44,
+                  height: 4,
+                  decoration: BoxDecoration(
+                      color: Colors.grey.shade200,
+                      borderRadius: BorderRadius.circular(2))),
+            ),
+            const SizedBox(height: 16),
+            const Text('Ateste de Sobrevivência',
+                style: TextStyle(
+                    fontSize: 17,
+                    fontWeight: FontWeight.w800,
+                    color: AppColors.text)),
+            const SizedBox(height: 14),
+            // Dropdown espécie
+            GestureDetector(
+              onTap: () => setState(() => _dropdownOpen = !_dropdownOpen),
+              child: Container(
+                padding:
+                    const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                decoration: BoxDecoration(
+                  color: Colors.grey.shade50,
+                  border: Border.all(color: Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(12),
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                  children: [
+                    Expanded(
+                      child: Text(_especie,
+                          style: const TextStyle(
+                              fontSize: 13,
+                              fontWeight: FontWeight.w600,
+                              color: AppColors.text),
+                          overflow: TextOverflow.ellipsis),
+                    ),
+                    Icon(
+                        _dropdownOpen
+                            ? Icons.keyboard_arrow_up
+                            : Icons.keyboard_arrow_down,
+                        color: Colors.grey.shade400),
+                  ],
+                ),
+              ),
+            ),
+            if (_dropdownOpen)
+              Container(
+                margin: const EdgeInsets.only(top: 4),
+                decoration: BoxDecoration(
+                  color: Colors.white,
+                  border: Border.all(color: Colors.grey.shade100),
+                  borderRadius: BorderRadius.circular(12),
+                  boxShadow: [
+                    BoxShadow(
+                        color: Colors.black.withOpacity(0.08), blurRadius: 12)
+                  ],
+                ),
+                child: Column(
+                  children: _especies
+                      .map((e) => GestureDetector(
+                            onTap: () => setState(() {
+                              _especie = e;
+                              _dropdownOpen = false;
+                            }),
+                            child: Container(
+                              width: double.infinity,
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 14, vertical: 12),
+                              child: Text(e,
+                                  style: TextStyle(
+                                      fontSize: 13,
+                                      fontWeight: e == _especie
+                                          ? FontWeight.w700
+                                          : FontWeight.normal,
+                                      color: e == _especie
+                                          ? AppColors.cerrado
+                                          : AppColors.text)),
+                            ),
+                          ))
+                      .toList(),
+                ),
+              ),
+            const SizedBox(height: 12),
+            // Health buttons
+            Row(
+              children: [
+                _healthBtn('saudavel', 'Saudável', AppColors.cerrado),
+                const SizedBox(width: 8),
+                _healthBtn('doente', 'Doente', AppColors.jalapao),
+                const SizedBox(width: 8),
+                _healthBtn('morta', 'Morta', Colors.grey),
+              ],
+            ),
+            const SizedBox(height: 16),
+            SizedBox(
+              width: double.infinity,
+              height: 52,
+              child: ElevatedButton.icon(
+                onPressed: _analisando
+                    ? null
+                    : (_imagem == null ? _capturarFoto : _salvarSincronizar),
+                style: ElevatedButton.styleFrom(
+                    backgroundColor: AppColors.cerrado, elevation: 0),
+                icon: _analisando
+                    ? const SizedBox(
+                        width: 18,
+                        height: 18,
+                        child: CircularProgressIndicator(
+                            color: Colors.white, strokeWidth: 2))
+                    : Icon(_imagem == null
+                        ? Icons.camera_alt
+                        : Icons.cloud_upload_outlined),
+                label: Text(_analisando
+                    ? 'Sincronizando...'
+                    : _imagem == null
+                        ? 'Capturar Foto'
+                        : 'Salvar e Sincronizar'),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _healthBtn(String value, String label, Color color) {
+    final active = _saude == value;
+    return Expanded(
+      child: GestureDetector(
+        onTap: () => setState(() => _saude = value),
+        child: Container(
+          padding: const EdgeInsets.symmetric(vertical: 10),
+          decoration: BoxDecoration(
+            color: active ? color.withOpacity(0.1) : Colors.white,
+            border: Border.all(
+                color: active ? color : Colors.grey.shade200,
+                width: active ? 2 : 1),
+            borderRadius: BorderRadius.circular(12),
+          ),
+          child: Text(label,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                  fontSize: 11,
+                  fontWeight: FontWeight.w700,
+                  color: active ? color : Colors.grey.shade400)),
+        ),
+      ),
     );
   }
 }
 
-enum _Estado { aguardando, analisando, concluido, erro }
+class _DashedBorderPainter extends CustomPainter {
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = const Color(0xFFD4A017).withOpacity(0.85)
+      ..strokeWidth = 2
+      ..style = PaintingStyle.stroke;
+
+    const dashLen = 8.0;
+    const gapLen = 5.0;
+    final path = Path()
+      ..addRRect(RRect.fromRectAndRadius(
+          Rect.fromLTWH(0, 0, size.width, size.height),
+          const Radius.circular(16)));
+
+    for (final m in path.computeMetrics()) {
+      double d = 0;
+      bool drawing = true;
+      while (d < m.length) {
+        final next = d + (drawing ? dashLen : gapLen);
+        if (drawing) canvas.drawPath(m.extractPath(d, next.clamp(0, m.length)), paint);
+        d = next;
+        drawing = !drawing;
+      }
+    }
+  }
+
+  @override
+  bool shouldRepaint(_) => false;
+}
