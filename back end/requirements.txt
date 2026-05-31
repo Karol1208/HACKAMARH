@@ -5,3 +5,5 @@ pydantic[email]
 Pillow
 httpx
 ultralytics
+geoalchemy2
+shapely
