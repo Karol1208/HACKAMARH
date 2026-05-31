@@ -1,9 +1,13 @@
 import io
 from datetime import date
 from typing import Optional
-from fastapi import APIRouter, Query
+from fastapi import APIRouter, HTTPException, Query
 from fastapi.responses import StreamingResponse
-from fpdf import FPDF
+
+try:
+    from fpdf import FPDF
+except ImportError:
+    FPDF = None
 
 router = APIRouter(prefix="/relatorios", tags=["relatorios"])
 
@@ -21,6 +25,9 @@ _ZONAS = [
 
 @router.get("/dossie")
 def dossie_completo(zona: Optional[str] = Query(None, description="Slug da zona: 'tocantins' ou 'jalapao'")):
+    if FPDF is None:
+        raise HTTPException(status_code=503, detail="Gerador de PDF indisponível: instale o pacote 'fpdf' ou 'fpdf2'.")
+
     zona_filtro = next((z for z in _ZONAS if z["slug"] == zona), None) if zona else None
     kpi = {
         "area_restaurada_ha": 4280,
